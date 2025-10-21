@@ -183,7 +183,7 @@ const handleRegister = (event) => {
     alert('Регистрация успешна!')
     closeRegisterModal()
 
-    // Сброс формы
+    // форму сбрасываем
     Object.keys(registerForm).forEach((key) => (registerForm[key] = ''))
   }
 }
