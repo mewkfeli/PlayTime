@@ -3,17 +3,9 @@
     <!-- Верхняя секция -->
     <section class="section top-section">
       <div class="gradient-bg"></div>
-
       <FloatingElements />
-
       <AppHeader />
-
       <HeroSection @open-register="openRegisterModal" />
-    </section>
-
-    <!-- Нижняя секция -->
-    <section class="section bottom-section">
-      <FeaturesSection />
     </section>
 
     <!-- Модальные окна -->
@@ -121,7 +113,6 @@ import { reactive } from 'vue'
 import AppHeader from '@/components/ui/AppHeader.vue'
 import ModalWindow from '@/components/ui/ModalWindow.vue'
 import HeroSection from '@/components/sections/HeroSection.vue'
-import FeaturesSection from '@/components/sections/FeaturesSection.vue'
 import FloatingElements from '@/components/sections/FloatingElements.vue'
 import { useModal } from '@/composables/useModal'
 

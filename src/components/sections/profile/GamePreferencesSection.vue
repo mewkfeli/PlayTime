@@ -1,0 +1,292 @@
+<template>
+  <div class="preferences-section">
+    <h2 class="section-title">Игровые предпочтения</h2>
+
+    <!-- Любимые игры -->
+    <div class="preference-group">
+      <label class="preference-label">Любимые игры</label>
+      <div v-if="!isEditing" class="preference-tags">
+        <span v-for="game in userData.favoriteGames" :key="game" class="tag">
+          {{ game }}
+        </span>
+      </div>
+      <div v-else class="multi-select-container">
+        <select
+          multiple
+          class="form-input multi-select"
+          v-model="localEditData.favoriteGames"
+          @change="updateSelectedGames"
+        >
+          <option
+            v-for="game in allGames"
+            :key="game"
+            :value="game"
+            :selected="localEditData.favoriteGames.includes(game)"
+          >
+            {{ game }}
+          </option>
+        </select>
+        <div class="selected-count">Выбрано: {{ localEditData.favoriteGames.length }}</div>
+      </div>
+    </div>
+
+    <!-- Любимые жанры -->
+    <div class="preference-group">
+      <label class="preference-label">Любимые жанры</label>
+      <div v-if="!isEditing" class="preference-tags">
+        <span v-for="genre in userData.favoriteGenres" :key="genre" class="tag">
+          {{ genre }}
+        </span>
+      </div>
+      <div v-else class="multi-select-container">
+        <select
+          multiple
+          class="form-input multi-select"
+          v-model="localEditData.favoriteGenres"
+          @change="updateSelectedGenres"
+        >
+          <option
+            v-for="genre in allGenres"
+            :key="genre"
+            :value="genre"
+            :selected="localEditData.favoriteGenres.includes(genre)"
+          >
+            {{ genre }}
+          </option>
+        </select>
+        <div class="selected-count">Выбрано: {{ localEditData.favoriteGenres.length }}</div>
+        <small class="hint">Для выбора нескольких вариантов используйте Ctrl+Click</small>
+      </div>
+    </div>
+
+    <!-- Роли (теперь кликабельные) -->
+    <div class="preference-group">
+      <label class="preference-label">Роли</label>
+      <div v-if="!isEditing" class="preference-tags">
+        <span v-for="role in userData.roles" :key="role" class="tag role-tag">
+          {{ getRoleDisplayName(role) }}
+        </span>
+      </div>
+      <div v-else class="roles-container">
+        <div class="roles-buttons">
+          <button
+            v-for="role in availableRoles"
+            :key="role.value"
+            type="button"
+            class="role-button"
+            :class="{
+              'role-button--active': localEditData.roles.includes(role.value),
+              'role-button--disabled':
+                localEditData.roles.length >= 2 && !localEditData.roles.includes(role.value),
+            }"
+            @click="toggleRole(role.value)"
+            :disabled="localEditData.roles.length >= 2 && !localEditData.roles.includes(role.value)"
+          >
+            {{ role.displayName }}
+          </button>
+        </div>
+        <div class="selected-count">Выбрано: {{ localEditData.roles.length }} из 2</div>
+        <small class="hint">Можно выбрать до 2 ролей</small>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'GamePreferencesSection',
+  props: {
+    userData: Object,
+    editData: Object,
+    isEditing: Boolean,
+    allGames: Array,
+    allGenres: Array,
+  },
+  data() {
+    return {
+      localEditData: {},
+      availableRoles: [
+        { value: 'player', displayName: 'Игрок' },
+        { value: 'organizer', displayName: 'Организатор' },
+      ],
+    }
+  },
+  watch: {
+    editData: {
+      immediate: true,
+      handler(newVal) {
+        this.localEditData = { ...newVal }
+      },
+    },
+  },
+  methods: {
+    updateSelectedGames() {
+      this.$emit('update:editData', {
+        ...this.localEditData,
+        favoriteGames: [...this.localEditData.favoriteGames],
+      })
+    },
+    updateSelectedGenres() {
+      this.$emit('update:editData', {
+        ...this.localEditData,
+        favoriteGenres: [...this.localEditData.favoriteGenres],
+      })
+    },
+    getRoleDisplayName(role) {
+      const roleNames = {
+        player: 'Игрок',
+        organizer: 'Организатор',
+      }
+      return roleNames[role] || role
+    },
+    toggleRole(role) {
+      const currentRoles = [...this.localEditData.roles]
+      const roleIndex = currentRoles.indexOf(role)
+
+      if (roleIndex > -1) {
+        // Удаляем роль, если она уже выбрана
+        currentRoles.splice(roleIndex, 1)
+      } else {
+        // Добавляем роль, если можно выбрать еще
+        if (currentRoles.length < 2) {
+          currentRoles.push(role)
+        }
+      }
+
+      this.localEditData.roles = currentRoles
+      this.$emit('update:editData', {
+        ...this.localEditData,
+        roles: [...currentRoles],
+      })
+    },
+  },
+}
+</script>
+
+<style scoped>
+.preferences-section {
+  background: var(--bg-light);
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--secondary);
+}
+
+.preference-group {
+  margin-bottom: 1.5rem;
+}
+
+.preference-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-dark);
+}
+
+.preference-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  background: var(--primary);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.roles-container {
+  margin-top: 0.5rem;
+}
+
+.roles-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.role-button {
+  padding: 0.6rem 1.2rem;
+  border: 2px solid var(--primary);
+  border-radius: 25px;
+  background: white;
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+  text-align: center;
+}
+
+.role-button:hover:not(.role-button--disabled) {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.role-button--active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.role-button--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: #ccc;
+  color: #666;
+}
+
+.role-button--disabled:hover {
+  transform: none;
+  box-shadow: none;
+  background: white;
+}
+
+.multi-select-container {
+  position: relative;
+}
+
+.multi-select {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.5rem;
+}
+
+.selected-count {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.hint {
+  display: block;
+  margin-top: 0.5rem;
+  color: #888;
+  font-size: 0.8rem;
+}
+
+/* Сохранение старого дизайна для form-input */
+.form-input {
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+</style>

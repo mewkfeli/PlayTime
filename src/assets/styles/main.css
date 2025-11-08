@@ -73,8 +73,7 @@ body {
 .gradient-bg {
   position: absolute;
   width: 100%;
-  height: 80%;
-  top: 15%;
+  height: 100%;
   background: linear-gradient(
     237deg,
     var(--gradient-start) 9%,
@@ -228,7 +227,6 @@ body {
   background: transparent;
   border: 2px solid var(--primary);
   color: var(--primary);
-  margin-left: 1rem;
 }
 
 .btn-outline:hover {
@@ -250,7 +248,6 @@ body {
 }
 
 .main-img {
-  width: 320px;
   height: auto;
   transform: rotate(-15deg);
   filter: drop-shadow(0 20px 30px rgba(41, 42, 87, 0.2));
@@ -262,7 +259,7 @@ body {
 }
 
 .decoration-img {
-  width: 200px;
+  width: 300px;
   height: auto;
   margin-left: -40px;
   margin-bottom: 40px;
@@ -434,11 +431,11 @@ body {
   }
 
   .main-img {
-    width: 280px;
+    width: 300px;
   }
 
   .decoration-img {
-    width: 180px;
+    width: 300px;
   }
 }
 
