@@ -86,7 +86,6 @@ body {
   border-radius: 0 0 40px 40px;
 }
 
-/* Header & Navigation */
 .header {
   display: flex;
   justify-content: space-between;
@@ -165,7 +164,6 @@ body {
   cursor: pointer;
 }
 
-/* Content & Typography */
 .content {
   position: relative;
   z-index: 2;
@@ -239,7 +237,6 @@ body {
   z-index: -1;
 }
 
-/* Buttons */
 .btn {
   background: var(--primary);
   color: white;
@@ -284,7 +281,6 @@ body {
   flex-wrap: wrap;
 }
 
-/* Images & Media */
 .img-container {
   position: absolute;
   right: 5%;
@@ -318,7 +314,6 @@ body {
   transform: translateY(-5px) rotate(5deg);
 }
 
-/* Features Grid */
 .features {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -366,7 +361,6 @@ body {
   color: #555;
 }
 
-/* Animations */
 .floating-elements {
   position: absolute;
   width: 100%;
@@ -422,7 +416,6 @@ body {
   }
 }
 
-/* Forms & Inputs */
 .form-group {
   margin-bottom: 1.5rem;
 }
@@ -478,7 +471,6 @@ body {
   display: block;
 }
 
-/* Cards */
 .card {
   background: white;
   border-radius: 20px;
@@ -502,7 +494,6 @@ body {
   color: var(--secondary);
 }
 
-/* Event Cards */
 .event-card {
   background: white;
   border-radius: 16px;
@@ -583,7 +574,6 @@ body {
   gap: 0.8rem;
 }
 
-/* Profile */
 .profile-header {
   display: flex;
   align-items: flex-start;
@@ -658,7 +648,8 @@ body {
 }
 
 .profile-content {
-  display: grid;
+  display: flex;
+  justify-content: center;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
 }
@@ -685,7 +676,6 @@ body {
   color: var(--secondary);
 }
 
-/* Modals */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -917,7 +907,6 @@ body {
   margin-bottom: 1.5rem;
   transition: var(--transition);
 }
-/* Event Cards */
 .event-card {
   background: white;
   border-radius: 16px;
@@ -1066,7 +1055,6 @@ body {
   gap: 2rem;
 }
 
-/* EventsFilters */
 .filters-container {
   display: flex;
   justify-content: space-between;
@@ -1151,7 +1139,6 @@ body {
   box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
 }
 
-/* EventsGrid */
 .events-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
@@ -1375,12 +1362,6 @@ body {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
-}
-
-.profile-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
 }
 
 .location-inputs {
@@ -1669,13 +1650,6 @@ body {
   gap: 1rem;
   margin-top: 1rem;
 }
-
-.profile-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
 .location-inputs {
   display: flex;
   gap: 10px;
@@ -1717,7 +1691,6 @@ select:focus {
   z-index: 10001 !important;
 }
 
-/* Для выпадающего списка браузера */
 select option {
   z-index: 10002 !important;
   position: relative;

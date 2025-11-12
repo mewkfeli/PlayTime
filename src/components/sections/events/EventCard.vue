@@ -36,7 +36,6 @@
           <p>{{ event.location }}</p>
         </div>
       </div>
-      <!-- Добавленная информация о дате и времени проведения -->
       <div class="event-meta-item">
         <div class="event-meta-icon">
           <i class="fas fa-calendar-day"></i>
@@ -46,7 +45,6 @@
           <p>{{ formatDateTime(getEventDateTime(), getEventTime()) }}</p>
         </div>
       </div>
-      <!-- Добавленная информация об организаторе -->
       <div class="event-meta-item">
         <div class="event-meta-icon">
           <i class="fas fa-user-tie"></i>

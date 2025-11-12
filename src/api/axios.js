@@ -35,12 +35,25 @@ api.interceptors.response.use(
     console.error('Ошибка API', error)
 
     if (error.response) {
-      const message = error.response.data || error.response.statusText
-      throw typeof message === 'string' ? message : 'Ошибка сервера'
+      let message = 'Ошибка сервера'
+
+      if (error.response.data) {
+        if (typeof error.response.data === 'string') {
+          message = error.response.data
+        } else if (error.response.data.message) {
+          message = error.response.data.message
+        } else if (error.response.data.title) {
+          message = error.response.data.title
+        }
+      }
+
+      console.error(`Статус: ${error.response.status}, Сообщение: ${message}`)
+      throw message
     } else if (error.request) {
       console.error('Сервер не ответил')
+      throw 'Сервер не отвечает. Проверьте подключение.'
     } else {
-      throw 'Ошибка настройки запроса ' + error.message
+      throw 'Ошибка настройки запроса: ' + error.message
     }
   },
 )

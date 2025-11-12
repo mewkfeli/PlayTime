@@ -29,11 +29,10 @@ import { ref, computed, onMounted, watch } from 'vue'
 import AppHeader from '@/components/ui/AppHeader.vue'
 import EventsFilters from '@/components/sections/events/EventsFilters.vue'
 import EventsGrid from '@/components/sections/events/EventsGrid.vue'
-import { eventService, userService } from '@/api/userService' // ← добавили userService
+import { eventService, userService } from '@/api/userService'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const debug = ref(true)
 
 const events = ref([])
 const loading = ref(true)
@@ -51,11 +50,10 @@ const filters = ref({
 const games = ref([])
 const cities = ref([])
 
-// Получить список игр из API
 const fetchGames = async () => {
   try {
     console.log('Загрузка игр...')
-    const data = await eventService.getGames() // Этот метод есть в eventService
+    const data = await eventService.getGames()
     console.log('Игры загружены:', data)
     games.value = Array.isArray(data) ? data : []
   } catch (error) {
@@ -64,15 +62,13 @@ const fetchGames = async () => {
   }
 }
 
-// Получить список городов из API - используем userService!
 const fetchCities = async () => {
   try {
     console.log('Загрузка городов...')
-    const data = await userService.getCities() // ← Исправлено здесь!
+    const data = await userService.getCities()
     console.log('Города загружены:', data)
     cities.value = Array.isArray(data) ? data : []
 
-    // Если данные пришли, но в неожиданном формате
     if (data && typeof data === 'object' && !Array.isArray(data)) {
       console.log('Данные пришли как объект, преобразуем в массив:', data)
       cities.value = Object.values(data)
@@ -83,7 +79,6 @@ const fetchCities = async () => {
   }
 }
 
-// Остальной код без изменений...
 async function fetchEventStats(eventId) {
   try {
     const response = await eventService.getEventStats(eventId)
@@ -199,10 +194,9 @@ const viewEvent = (event) => {
   margin-bottom: 2rem;
   position: relative;
   overflow: hidden;
-  z-index: 1; /* добавлено */
+  z-index: 1;
 }
 
-/* Добавьте для выпадающих списков */
 .catalog-header select,
 .catalog-header .dropdown,
 .catalog-header .v-select,
@@ -211,8 +205,6 @@ const viewEvent = (event) => {
   z-index: 10 !important;
   position: relative;
 }
-
-/* Если используете сторонние компоненты, добавьте аналогично */
 
 .catalog-header::before {
   content: '';

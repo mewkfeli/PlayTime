@@ -135,12 +135,13 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import AppHeader from '@/components/ui/AppHeader.vue'
 import ModalWindow from '@/components/ui/ModalWindow.vue'
 import HeroSection from '@/components/sections/HeroSection.vue'
 import FloatingElements from '@/components/sections/FloatingElements.vue'
 import { useModal } from '@/composables/useModal'
+import { userState, logout, login, initUserSession } from '@/composables/userSession'
 
 const {
   isRegisterModalOpen,
@@ -179,6 +180,11 @@ const registerErrors = reactive({
 const loginErrors = reactive({
   email: '',
   password: '',
+})
+
+// Восстановление сессии при загрузке страницы
+onMounted(() => {
+  initUserSession()
 })
 
 // Валидация email
@@ -281,11 +287,11 @@ const handleLogin = async () => {
   isLoginLoading.value = true
 
   try {
-    const user = await window.$userService.login(loginForm.email, loginForm.password)
-
-    // Сохраняем пользователя
-    localStorage.setItem('user', JSON.stringify(user))
-
+    const result = await window.$userService.login(loginForm.email, loginForm.password)
+    // Исправлено: если result.user отсутствует, используем result как user
+    const user = result.user || result
+    const token = result.token || result.accessToken || ''
+    login(user, token)
     alert('Вход выполнен успешно!')
     closeLoginModal()
 
@@ -308,4 +314,10 @@ const handleLogin = async () => {
     isLoginLoading.value = false
   }
 }
+
+// Экспорт состояния пользователя и функции выхода для других компонентов
+defineExpose({
+  userState,
+  logout,
+})
 </script>
