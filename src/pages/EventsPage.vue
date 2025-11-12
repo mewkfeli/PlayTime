@@ -15,15 +15,13 @@
         />
       </div>
 
-      <!-- Сетка событий -->
-      <EventsGrid :events="filteredEvents" @view-event="viewEvent" @join-event="joinEvent" />
+      <div v-if="loading">Загрузка...</div>
+      <div v-else>
+        <div v-if="error" class="error">{{ error }}</div>
 
-      <!-- Пагинация -->
-      <EventsPagination
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        @page-change="changePage"
-      />
+        <!-- Сетка событий -->
+        <EventsGrid :events="filteredEvents" @view-event="viewEvent" @join-event="joinEvent" />
+      </div>
     </main>
   </div>
 </template>
@@ -33,75 +31,14 @@ import { ref, computed, onMounted } from 'vue'
 import AppHeader from '@/components/ui/AppHeader.vue'
 import EventsFilters from '@/components/sections/events/EventsFilters.vue'
 import EventsGrid from '@/components/sections/events/EventsGrid.vue'
-import EventsPagination from '@/components/sections/events/EventsPagination.vue'
+import { eventService } from '@/api/userService'
+import { useRouter } from 'vue-router'
 
-// Данные событий
-const events = ref([
-  {
-    id: 1,
-    title: 'Вечер настольных игр',
-    game: 'Колонизаторы',
-    date: '15.11.2025',
-    time: '18:30 - 21:30',
-    location: 'Кафе "Игровая зона", ул. Центральная, 15',
-    players: ['АП', 'МС', '+2'],
-    participants: '4/6',
-    description:
-      'Приглашаю всех любителей настольных игр на вечернюю сессию по классической игре "Колонизаторы". Отличная возможность провести время в приятной компании и насладиться стратегической игрой.',
-    city: 'ufa',
-    gameType: 'catan',
-    playerCount: '4-6',
-    status: 'open',
-  },
-  {
-    id: 2,
-    title: 'Турнир по Мафии',
-    game: 'Мафия',
-    date: '18.11.2025',
-    time: '19:00 - 22:00',
-    location: 'Коворкинг "Пространство", пр. Ленина, 45',
-    players: ['ИП', 'ОК', 'СМ', '+5'],
-    participants: '8/12',
-    description:
-      'Организую турнир по Мафии для всех желающих. Будем играть в несколько раундов с разными составами игроков. Призы для победителей! Отличная возможность проявить свои актерские способности.',
-    city: 'ufa',
-    gameType: 'mafia',
-    playerCount: '6+',
-    status: 'open',
-  },
-  {
-    id: 3,
-    title: 'Игровой вечер в парке',
-    game: 'Каркассон',
-    date: '20.11.2025',
-    time: '15:00 - 18:00',
-    location: 'Центральный парк, главная аллея',
-    players: ['ДК', '+1'],
-    participants: '2/5',
-    description:
-      'Приглашаю на игровую сессию в парке. Будем играть в Каркассон на свежем воздухе. Отличная возможность совместить игру и прогулку. Приносите пледы и хорошее настроение!',
-    city: 'ufa',
-    gameType: 'carcassonne',
-    playerCount: '2-4',
-    status: 'open',
-  },
-  {
-    id: 4,
-    title: 'Ночной Манчкин',
-    game: 'Манчкин',
-    date: '22.11.2025',
-    time: '20:00 - 23:30',
-    location: 'Антикафе "Время игр", ул. Геймерская, 12',
-    players: ['АР', 'ЕС', 'МВ', '+3'],
-    participants: '6/8',
-    description:
-      'Ночная сессия по Манчкину с расширениями. Приносите свои колоды и хорошее настроение! Будет весело и безумно. Кофе и чай предоставляются. Приготовьтесь к эпическим сражениям!',
-    city: 'ufa',
-    gameType: 'munchkin',
-    playerCount: '6+',
-    status: 'open',
-  },
-])
+const router = useRouter()
+
+const events = ref([])
+const loading = ref(true)
+const error = ref('')
 
 // Фильтры
 const filters = ref({
@@ -110,12 +47,42 @@ const filters = ref({
   date: '',
   players: '',
   status: '',
+  search: '',
 })
 
-// Пагинация
-const currentPage = ref(1)
-const itemsPerPage = 6
-const totalPages = computed(() => Math.ceil(filteredEvents.value.length / itemsPerPage))
+// Преобразование данных события из API в нужный формат
+function mapEvent(apiEvent) {
+  const dateObj = new Date(apiEvent.eventDatetime)
+  return {
+    id: apiEvent.eventId,
+    title: apiEvent.eventName,
+    game: apiEvent.game,
+    date: dateObj.toLocaleDateString('ru-RU'),
+    time: dateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+    location: apiEvent.location,
+    city: apiEvent.city,
+    gameType: apiEvent.gameType,
+    playerCount: apiEvent.playerCount,
+    status: apiEvent.status,
+    participants: apiEvent.eventParticipants?.length || 0,
+    description: apiEvent.description,
+    players: apiEvent.eventParticipants?.map((p) => p.userName) || [],
+    created: new Date(apiEvent.createdAt).toLocaleDateString('ru-RU'),
+  }
+}
+
+// Загрузка событий из API
+onMounted(async () => {
+  try {
+    const data = await eventService.getEvents()
+    events.value = Array.isArray(data) ? data.map(mapEvent) : []
+  } catch (e) {
+    error.value = 'Ошибка загрузки событий: ' + (e?.message || e)
+    events.value = []
+  } finally {
+    loading.value = false
+  }
+})
 
 // Фильтрация событий
 const filteredEvents = computed(() => {
@@ -154,17 +121,10 @@ const filteredEvents = computed(() => {
 // Обработчики событий
 const handleFilterChange = (newFilters) => {
   filters.value = { ...filters.value, ...newFilters }
-  currentPage.value = 1
 }
 
 const handleSearch = (searchTerm) => {
   filters.value.search = searchTerm
-  currentPage.value = 1
-}
-
-const viewEvent = (event) => {
-  alert(`Просмотр события: ${event.title}`)
-  //  переход на страницу события
 }
 
 const joinEvent = (event) => {
@@ -173,13 +133,9 @@ const joinEvent = (event) => {
   }
 }
 
-const changePage = (page) => {
-  currentPage.value = page
+const viewEvent = (event) => {
+  router.push(`/event/${event.id}`)
 }
-
-onMounted(() => {
-  console.log('Events page mounted')
-})
 </script>
 
 <style scoped>
@@ -225,6 +181,11 @@ onMounted(() => {
   color: #666;
   margin-bottom: 2rem;
   font-weight: 500;
+}
+
+.error {
+  color: red;
+  margin-bottom: 1rem;
 }
 
 @media (max-width: 992px) {
