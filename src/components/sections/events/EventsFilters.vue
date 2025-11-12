@@ -5,10 +5,9 @@
       <label class="filter-label">Город</label>
       <select class="filter-select" v-model="localFilters.city" @change="emitFilters">
         <option value="">Все города</option>
-        <option value="moscow">Москва</option>
-        <option value="spb">Санкт-Петербург</option>
-        <option value="ufa">Уфа</option>
-        <option value="ekb">Екатеринбург</option>
+        <option v-for="city in cities" :key="city.cityId" :value="city.cityName">
+          {{ city.cityName }}
+        </option>
       </select>
     </div>
 
@@ -16,29 +15,16 @@
       <label class="filter-label">Игра</label>
       <select class="filter-select" v-model="localFilters.game" @change="emitFilters">
         <option value="">Все игры</option>
-        <option value="catan">Колонизаторы</option>
-        <option value="munchkin">Манчкин</option>
-        <option value="mafia">Мафия</option>
-        <option value="carcassonne">Каркассон</option>
+        <option v-for="game in games" :key="game.gameId" :value="game.gameName">
+          {{ game.gameName }}
+        </option>
       </select>
     </div>
 
     <div class="filter-group">
       <label class="filter-label">Дата</label>
       <div class="date-input-container">
-        <input
-          type="text"
-          class="date-input"
-          placeholder="Выберите дату"
-          readonly
-          v-model="localFilters.date"
-          @click="toggleCalendar"
-        />
-        <CalendarPopup
-          v-model:visible="showCalendar"
-          v-model:selected-date="localFilters.date"
-          @date-select="handleDateSelect"
-        />
+        <input type="date" class="date-input" v-model="localFilters.date" @change="emitFilters" />
       </div>
     </div>
 
@@ -51,15 +37,6 @@
         <option value="6+">6+ игроков</option>
       </select>
     </div>
-
-    <div class="filter-group">
-      <label class="filter-label">Статус</label>
-      <select class="filter-select" v-model="localFilters.status" @change="emitFilters">
-        <option value="">Все события</option>
-        <option value="open">Есть свободные места</option>
-        <option value="upcoming">Скоро начнется</option>
-      </select>
-    </div>
   </div>
 
   <!-- Поиск -->
@@ -70,31 +47,50 @@
       placeholder="Поиск по названию события или описанию..."
       v-model="searchTerm"
       @keyup.enter="handleSearch"
-    />
-    <button class="btn btn-secondary" @click="handleSearch">
-      <i class="fas fa-search"></i> Найти
-    </button>
+    /> 
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import CalendarPopup from '@/components/ui/CalendarPopup.vue'
+import { ref, watch, onMounted } from 'vue'
 
 const props = defineProps({
   filters: {
     type: Object,
     required: true,
   },
+  games: {
+    type: Array,
+    required: true,
+    default: () => [],
+  },
+  cities: {
+    type: Array,
+    required: true,
+    default: () => [],
+  },
 })
 
 const emit = defineEmits(['filter-change', 'search'])
 
-const localFilters = ref({ ...props.filters })
+const localFilters = ref({
+  city: '',
+  game: '',
+  date: '',
+  players: '',
+  ...props.filters,
+})
 const searchTerm = ref('')
-const showCalendar = ref(false)
+
+// Добавляем отладочную информацию
+onMounted(() => {
+  console.log('Cities received:', props.cities)
+  console.log('Initial filters:', props.filters)
+  console.log('Local filters:', localFilters.value)
+})
 
 const emitFilters = () => {
+  console.log('Emitting filters:', localFilters.value)
   emit('filter-change', localFilters.value)
 }
 
@@ -102,22 +98,42 @@ const handleSearch = () => {
   emit('search', searchTerm.value)
 }
 
-const toggleCalendar = () => {
-  showCalendar.value = !showCalendar.value
-}
-
-const handleDateSelect = (date) => {
-  localFilters.value.date = date
-  emitFilters()
-  showCalendar.value = false
-}
-
 // Следим за изменениями props и синхронизируем с localFilters
 watch(
   () => props.filters,
   (newFilters) => {
     localFilters.value = { ...newFilters }
+    console.log('Filters updated:', localFilters.value)
   },
   { deep: true },
 )
+
+// Следим за изменениями cities для отладки
+watch(
+  () => props.cities,
+  (newCities) => {
+    console.log('Cities updated:', newCities)
+  },
+)
 </script>
+<style scoped>
+.filters-container {
+  position: relative;
+  z-index: 1000; /* Высокий z-index для контейнера */
+}
+
+.filter-group {
+  position: relative;
+}
+
+.filter-select {
+  width: 450px;
+  position: relative;
+  z-index: 1001; /* Еще выше для select */
+}
+
+/* Убедитесь, что select имеет правильное отображение */
+select {
+  appearance: menulist; /* Нативное отображение выпадающего списка */
+}
+</style>

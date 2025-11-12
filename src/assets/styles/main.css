@@ -1068,7 +1068,8 @@ body {
 
 /* EventsFilters */
 .filters-container {
-  display: grid;
+  display: flex;
+  justify-content: space-between;
   grid-template-columns: repeat(5, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
@@ -1704,4 +1705,20 @@ body {
   margin: 0;
   font-size: 14px;
   color: #666;
+}
+
+/* Глобальные стили для выпадающих списков */
+select {
+  z-index: 10000 !important;
+  position: relative;
+}
+
+select:focus {
+  z-index: 10001 !important;
+}
+
+/* Для выпадающего списка браузера */
+select option {
+  z-index: 10002 !important;
+  position: relative;
 }

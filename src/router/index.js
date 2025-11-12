@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '@/pages/HomePage.vue'
 import ProfilePage from '@/pages/ProfilePage.vue'
 import EventsPage from '@/pages/EventsPage.vue'
-import EventDetailPage from '@/pages/EventDetailPage.vue'
 import AdminPage from '@/pages/AdminPage.vue'
 
 const routes = [
@@ -20,12 +19,6 @@ const routes = [
     path: '/events',
     name: 'Events',
     component: EventsPage,
-  },
-  {
-    path: '/event/:id',
-    name: 'EventDetail',
-    component: EventDetailPage,
-    props: true,
   },
   {
     path: '/admin',

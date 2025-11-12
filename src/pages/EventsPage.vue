@@ -2,14 +2,14 @@
   <div class="events-page">
     <AppHeader />
     <main class="catalog-section">
-      <!-- Заголовок каталога -->
       <div class="catalog-header">
         <h1 class="catalog-title">Каталог событий</h1>
         <div class="catalog-subtitle">Найдите идеальное игровое событие для себя</div>
 
-        <!-- Фильтры -->
         <EventsFilters
           :filters="filters"
+          :games="games"
+          :cities="cities"
           @filter-change="handleFilterChange"
           @search="handleSearch"
         />
@@ -18,8 +18,6 @@
       <div v-if="loading">Загрузка...</div>
       <div v-else>
         <div v-if="error" class="error">{{ error }}</div>
-
-        <!-- Сетка событий -->
         <EventsGrid :events="filteredEvents" @view-event="viewEvent" @join-event="joinEvent" />
       </div>
     </main>
@@ -27,20 +25,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AppHeader from '@/components/ui/AppHeader.vue'
 import EventsFilters from '@/components/sections/events/EventsFilters.vue'
 import EventsGrid from '@/components/sections/events/EventsGrid.vue'
-import { eventService } from '@/api/userService'
+import { eventService, userService } from '@/api/userService' // ← добавили userService
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const debug = ref(true)
 
 const events = ref([])
 const loading = ref(true)
 const error = ref('')
 
-// Фильтры
 const filters = ref({
   city: '',
   game: '',
@@ -50,9 +48,61 @@ const filters = ref({
   search: '',
 })
 
-// Преобразование данных события из API в нужный формат
-function mapEvent(apiEvent) {
+const games = ref([])
+const cities = ref([])
+
+// Получить список игр из API
+const fetchGames = async () => {
+  try {
+    console.log('Загрузка игр...')
+    const data = await eventService.getGames() // Этот метод есть в eventService
+    console.log('Игры загружены:', data)
+    games.value = Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('Ошибка загрузки игр:', error)
+    games.value = []
+  }
+}
+
+// Получить список городов из API - используем userService!
+const fetchCities = async () => {
+  try {
+    console.log('Загрузка городов...')
+    const data = await userService.getCities() // ← Исправлено здесь!
+    console.log('Города загружены:', data)
+    cities.value = Array.isArray(data) ? data : []
+
+    // Если данные пришли, но в неожиданном формате
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      console.log('Данные пришли как объект, преобразуем в массив:', data)
+      cities.value = Object.values(data)
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки городов:', error)
+    cities.value = []
+  }
+}
+
+// Остальной код без изменений...
+async function fetchEventStats(eventId) {
+  try {
+    const response = await eventService.getEventStats(eventId)
+    return {
+      participants: response.participantsCount ?? 0,
+      organizer: response.organizerName ?? 'Неизвестно',
+    }
+  } catch (e) {
+    console.warn('Ошибка получения информации о событии', eventId, e)
+    return {
+      participants: 0,
+      organizer: 'Неизвестно',
+    }
+  }
+}
+
+async function mapEventWithStats(apiEvent) {
   const dateObj = new Date(apiEvent.eventDatetime)
+  const stats = await fetchEventStats(apiEvent.eventId)
   return {
     id: apiEvent.eventId,
     title: apiEvent.eventName,
@@ -64,61 +114,54 @@ function mapEvent(apiEvent) {
     gameType: apiEvent.gameType,
     playerCount: apiEvent.playerCount,
     status: apiEvent.status,
-    participants: apiEvent.eventParticipants?.length || 0,
+    participants: stats.participants,
+    maxParticipants: apiEvent.maxParticipants,
+    organizer: stats.organizer,
     description: apiEvent.description,
     players: apiEvent.eventParticipants?.map((p) => p.userName) || [],
     created: new Date(apiEvent.createdAt).toLocaleDateString('ru-RU'),
   }
 }
 
-// Загрузка событий из API
-onMounted(async () => {
+// Загрузка событий с сервера по фильтрам
+const fetchEvents = async () => {
+  loading.value = true
+  error.value = ''
   try {
-    const data = await eventService.getEvents()
-    events.value = Array.isArray(data) ? data.map(mapEvent) : []
+    let data = []
+    console.log('Фильтры для запроса:', filters.value)
+    if (
+      filters.value.city &&
+      !filters.value.game &&
+      !filters.value.date &&
+      !filters.value.players &&
+      !filters.value.status &&
+      !filters.value.search
+    ) {
+      data = await eventService.getEventsByCity(filters.value.city)
+    } else {
+      data = await eventService.filterEvents(filters.value)
+    }
+    events.value = Array.isArray(data) ? await Promise.all(data.map(mapEventWithStats)) : []
   } catch (e) {
     error.value = 'Ошибка загрузки событий: ' + (e?.message || e)
     events.value = []
   } finally {
     loading.value = false
   }
+}
+
+onMounted(async () => {
+  console.log('Компонент монтируется...')
+  await fetchGames()
+  await fetchCities()
+  await fetchEvents()
 })
 
-// Фильтрация событий
-const filteredEvents = computed(() => {
-  let result = events.value
+watch(filters, fetchEvents, { deep: true })
 
-  if (filters.value.city) {
-    result = result.filter((event) => event.city === filters.value.city)
-  }
+const filteredEvents = computed(() => events.value)
 
-  if (filters.value.game) {
-    result = result.filter((event) => event.gameType === filters.value.game)
-  }
-
-  if (filters.value.players) {
-    result = result.filter((event) => event.playerCount === filters.value.players)
-  }
-
-  if (filters.value.status) {
-    result = result.filter((event) => event.status === filters.value.status)
-  }
-
-  // Поиск по тексту
-  if (filters.value.search) {
-    const searchTerm = filters.value.search.toLowerCase()
-    result = result.filter(
-      (event) =>
-        event.title.toLowerCase().includes(searchTerm) ||
-        event.description.toLowerCase().includes(searchTerm) ||
-        event.game.toLowerCase().includes(searchTerm),
-    )
-  }
-
-  return result
-})
-
-// Обработчики событий
 const handleFilterChange = (newFilters) => {
   filters.value = { ...filters.value, ...newFilters }
 }
@@ -137,7 +180,6 @@ const viewEvent = (event) => {
   router.push(`/event/${event.id}`)
 }
 </script>
-
 <style scoped>
 .events-page {
   min-height: 100vh;
@@ -157,7 +199,20 @@ const viewEvent = (event) => {
   margin-bottom: 2rem;
   position: relative;
   overflow: hidden;
+  z-index: 1; /* добавлено */
 }
+
+/* Добавьте для выпадающих списков */
+.catalog-header select,
+.catalog-header .dropdown,
+.catalog-header .v-select,
+.catalog-header .el-select,
+.catalog-header .custom-select {
+  z-index: 10 !important;
+  position: relative;
+}
+
+/* Если используете сторонние компоненты, добавьте аналогично */
 
 .catalog-header::before {
   content: '';
@@ -186,35 +241,5 @@ const viewEvent = (event) => {
 .error {
   color: red;
   margin-bottom: 1rem;
-}
-
-@media (max-width: 992px) {
-  .catalog-title {
-    font-size: 2rem;
-  }
-
-  .catalog-section {
-    padding: 6rem 2rem 2rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .catalog-section {
-    padding: 5rem 1.5rem 1.5rem;
-  }
-
-  .catalog-header {
-    padding: 2rem 1.5rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .catalog-title {
-    font-size: 1.8rem;
-  }
-
-  .catalog-section {
-    padding: 5rem 1rem 1rem;
-  }
 }
 </style>

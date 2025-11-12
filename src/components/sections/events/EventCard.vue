@@ -6,7 +6,7 @@
         <div class="event-card-game">{{ event.game || event.game_name || event.game_id }}</div>
       </div>
       <div class="event-card-date">
-        <i class="fas fa-calendar-alt"></i> {{ formatDate(getEventDateTime()) }}
+        <i class="calendar-alt"></i> {{ formatDate(getEventDateTime()) }}
       </div>
     </div>
 
@@ -22,8 +22,7 @@
         </div>
       </div>
       <div class="players-count">
-        {{ event.current_participants || 0 }}/{{ event.max_participants || event.participants }}
-        участников
+        {{ event.participants }}/{{ event.maxParticipants }} участников
       </div>
     </div>
 
@@ -55,7 +54,7 @@
         <div class="event-meta-content">
           <h4>Организатор</h4>
           <p>
-            {{ event.organizer || event.organizer_name || `Организатор #${event.organizer_id}` }}
+            {{ event.organizer || 'Неизвестно' }}
           </p>
         </div>
       </div>
@@ -100,8 +99,6 @@ const parseDate = (dateString, timeString = '18:00') => {
     return null
   }
 
-  console.log('Trying to parse date:', dateString, 'with time:', timeString)
-
   // Метод 1: Формат DD.MM.YYYY с временем
   const dotFormatMatch = dateString.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
   if (dotFormatMatch) {
@@ -127,16 +124,6 @@ const parseDate = (dateString, timeString = '18:00') => {
       return date
     }
   }
-
-  // Метод 2: Стандартный парсинг
-  let date = new Date(dateString)
-  if (!isNaN(date.getTime())) {
-    console.log('Successfully parsed with Date constructor:', date)
-    return date
-  }
-
-  console.warn('Failed to parse date:', dateString)
-  return null
 }
 
 // Функция для форматирования даты в русском формате

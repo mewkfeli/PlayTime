@@ -11,6 +11,11 @@ export const userService = {
     const response = await api.post('/Authorization', { email, password })
     return response.data
   },
+
+  async getCities() {
+    const response = await api.get('/User/GetCity')
+    return response.data
+  },
 }
 
 export const eventService = {
@@ -20,6 +25,32 @@ export const eventService = {
   },
   async getEventById(id) {
     const response = await eventApi.get(`/GetEventById?id=${id}`)
+    return response.data
+  },
+  async getEventsByCity(city) {
+    const response = await eventApi.get(`/GetEventByCity?location=${encodeURIComponent(city)}`)
+    return response.data
+  },
+  async filterEvents(filters) {
+    const params = new URLSearchParams()
+    // Отправляем текст как есть
+    if (filters.game) {
+      params.append('gameName', filters.game)
+    }
+    if (filters.date) params.append('date', filters.date)
+    if (filters.players) params.append('playersRange', filters.players)
+    if (filters.status) params.append('status', filters.status)
+    if (filters.search) params.append('search', filters.search)
+    const response = await eventApi.get(`/FilterEvents?${params.toString()}`)
+    return response.data
+  },
+  async getEventStats(id) {
+    const response = await eventApi.get(`/GetEventStats/${id}`)
+    return response.data
+  },
+  async getGames() {
+    // Используем основной api, чтобы получить /api/Game/GetGames
+    const response = await api.get('/Game/GetGames')
     return response.data
   },
 }
