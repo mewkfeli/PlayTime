@@ -119,7 +119,6 @@ export default {
     validateForm() {
       const errors = []
 
-      // Проверка обязательных полей (кроме пароля)
       if (!this.editData.name?.trim()) {
         errors.push('Имя - обязательное поле')
       }
@@ -161,11 +160,9 @@ export default {
         errors.push('Описание должно содержать минимум 10 символов')
       }
 
-      // Валидация пароля ТОЛЬКО если поле "Новый пароль" не пустое
       const hasNewPassword = this.editData.newPassword?.trim()
 
       if (hasNewPassword) {
-        // Если указан новый пароль, проверяем все поля пароля
         if (!this.editData.currentPassword?.trim()) {
           errors.push('Для смены пароля необходимо указать текущий пароль')
         }
@@ -252,12 +249,10 @@ export default {
         contactInfo: this.editData.contactInfo.trim(),
       }
 
-      // Обработка даты рождения - проверяем валидность
       if (this.editData.birthDate) {
         try {
           const date = new Date(this.editData.birthDate)
           if (!isNaN(date.getTime())) {
-            // Форматируем дату как ISO строку без времени
             data.birthDate = date.toISOString().split('T')[0]
           }
         } catch {
@@ -265,19 +260,15 @@ export default {
         }
       }
 
-      // Добавляем пароли только если заполнено поле "Новый пароль"
       const hasNewPassword = this.editData.newPassword?.trim()
       if (hasNewPassword) {
         data.currentPassword = this.editData.currentPassword?.trim() || ''
         data.newPassword = this.editData.newPassword.trim()
         data.confirmNewPassword = this.editData.confirmNewPassword?.trim() || ''
       } else {
-        // Если пароль не меняется, НЕ включаем поля пароля в запрос
-        // Это важно, чтобы не отправлять пустые строки
+        // заглушка
       }
 
-      console.log('📤 Финальные данные для отправки:', data)
-      console.log('📤 JSON данные:', JSON.stringify(data))
       return data
     },
     handleCancelEdit() {
@@ -320,12 +311,6 @@ export default {
           throw new Error('ID пользователя не определен')
         }
 
-        console.log('🔍 ДЕТАЛЬНЫЙ ОТЛАДОЧНЫЙ ВЫВОД:')
-        console.log('UserId:', this.currentUserId)
-        console.log('UpdateData:', updateData)
-        console.log('JSON stringify:', JSON.stringify(updateData))
-        console.log('Content-Type будет: application/json')
-
         const response = await userService.updateProfile(this.currentUserId, updateData)
 
         if (response.message) {
@@ -360,7 +345,6 @@ export default {
           const errorData = error.response.data
           console.error('📋 Детали ошибки сервера:', errorData)
 
-          // Детальный разбор ошибки валидации ASP.NET
           if (errorData.errors) {
             const validationErrors = Object.entries(errorData.errors).map(
               ([field, messages]) => `${field}: ${messages.join(', ')}`,

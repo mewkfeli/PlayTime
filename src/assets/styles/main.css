@@ -1681,17 +1681,20 @@ body {
   color: #666;
 }
 
-/* Глобальные стили для выпадающих списков */
 select {
   z-index: 10000 !important;
   position: relative;
 }
 
 select:focus {
-  z-index: 10001 !important;
+  z-index: 10000 !important;
 }
 
 select option {
   z-index: 10002 !important;
   position: relative;
+}
+
+body.modal-open {
+  overflow: hidden;
 }

@@ -6,9 +6,9 @@ import '@fortawesome/fontawesome-free/css/all.min.css'
 
 const app = createApp(App)
 
-// добавляем сервис в глобальные свойства
+// добав сервис в глобальные свойства
 app.config.globalProperties.$userService = userService
-// добавляем в window для доступа из компонентов (опционально)
+// добав в окно для доступа из компонентов
 window.$userService = userService
 
 app.use(router)

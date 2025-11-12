@@ -182,12 +182,11 @@ const loginErrors = reactive({
   password: '',
 })
 
-// Восстановление сессии при загрузке страницы
+// восстановление сессии при загрузке страницы
 onMounted(() => {
   initUserSession()
 })
 
-// Валидация email
 const validateEmail = (email) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return re.test(email)
@@ -199,7 +198,6 @@ const handleRegister = async () => {
 
   let isValid = true
 
-  // Валидация
   if (!registerForm.name.trim()) {
     registerErrors.name = 'Введите имя'
     isValid = false
@@ -288,18 +286,16 @@ const handleLogin = async () => {
 
   try {
     const result = await window.$userService.login(loginForm.email, loginForm.password)
-    // Исправлено: если result.user отсутствует, используем result как user
     const user = result.user || result
     const token = result.token || result.accessToken || ''
     login(user, token)
     alert('Вход выполнен успешно!')
     closeLoginModal()
 
-    // Очистка формы (кроме remember)
     loginForm.email = ''
     loginForm.password = ''
 
-    console.log('Пользователь вошел:', user)
+    console.log('Пользователь вошел', user)
   } catch (error) {
     const errorMessage = typeof error === 'string' ? error : 'Ошибка при входе'
 
@@ -315,7 +311,6 @@ const handleLogin = async () => {
   }
 }
 
-// Экспорт состояния пользователя и функции выхода для других компонентов
 defineExpose({
   userState,
   logout,

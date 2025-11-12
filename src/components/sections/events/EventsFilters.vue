@@ -47,12 +47,12 @@
       placeholder="Поиск по названию события или описанию..."
       v-model="searchTerm"
       @keyup.enter="handleSearch"
-    /> 
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 
 const props = defineProps({
   filters: {
@@ -82,15 +82,7 @@ const localFilters = ref({
 })
 const searchTerm = ref('')
 
-// Добавляем отладочную информацию
-onMounted(() => {
-  console.log('Cities received:', props.cities)
-  console.log('Initial filters:', props.filters)
-  console.log('Local filters:', localFilters.value)
-})
-
 const emitFilters = () => {
-  console.log('Emitting filters:', localFilters.value)
   emit('filter-change', localFilters.value)
 }
 
@@ -98,28 +90,25 @@ const handleSearch = () => {
   emit('search', searchTerm.value)
 }
 
-// Следим за изменениями props и синхронизируем с localFilters
 watch(
   () => props.filters,
   (newFilters) => {
     localFilters.value = { ...newFilters }
-    console.log('Filters updated:', localFilters.value)
   },
   { deep: true },
 )
 
-// Следим за изменениями cities для отладки
 watch(
   () => props.cities,
   (newCities) => {
-    console.log('Cities updated:', newCities)
+    console.log(newCities)
   },
 )
 </script>
 <style scoped>
 .filters-container {
   position: relative;
-  z-index: 1000; /* Высокий z-index для контейнера */
+  z-index: 1000;
 }
 
 .filter-group {
@@ -129,11 +118,10 @@ watch(
 .filter-select {
   width: 450px;
   position: relative;
-  z-index: 1001; /* Еще выше для select */
+  z-index: 1001;
 }
 
-/* Убедитесь, что select имеет правильное отображение */
 select {
-  appearance: menulist; /* Нативное отображение выпадающего списка */
+  appearance: menulist;
 }
 </style>

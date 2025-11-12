@@ -8,11 +8,9 @@ export const userState = reactive({
   isLoading: true,
 })
 
-// Инициализация состояния из localStorage/sessionStorage
 export function initUserSession() {
   let userJson = localStorage.getItem('user') || sessionStorage.getItem('user')
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
-  // Проверка на пустую строку и undefined
   if (userJson && userJson !== 'undefined' && userJson !== '') {
     try {
       userState.user = JSON.parse(userJson)
@@ -24,8 +22,7 @@ export function initUserSession() {
       userState.userId = null
       userState.token = null
       userState.isAuthenticated = false
-      // Можно добавить логирование ошибки парсинга
-      console.warn('Ошибка парсинга userJson:', e)
+      console.warn('Ошибка парсинга ', e)
     }
   }
   userState.isLoading = false

@@ -63,4 +63,8 @@ export const eventService = {
     const response = await api.get('/Game/GetGames')
     return response.data
   },
+  async addEvent(eventData) {
+    const response = await api.post('/Event/AddEvents', eventData)
+    return response.data
+  },
 }

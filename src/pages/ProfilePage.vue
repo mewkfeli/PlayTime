@@ -8,7 +8,6 @@
         @profile-updated="refreshProfile"
         @error="handleError"
       />
-      <!-- ... остальной код ... -->
     </main>
   </div>
 </template>

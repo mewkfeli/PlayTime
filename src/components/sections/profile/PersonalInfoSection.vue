@@ -472,7 +472,6 @@ export default {
   font-style: italic;
 }
 
-/* Стили для полей ввода */
 .compact-input {
   background: #f8f9ff;
   border: 2px solid #e0e0e0;
@@ -494,7 +493,6 @@ select.compact-input {
   cursor: pointer;
 }
 
-/* Компактная секция "О себе" */
 .compact-about-section {
   margin-top: 2rem;
 }
@@ -565,7 +563,6 @@ select.compact-input {
   text-align: center;
 }
 
-/* Секция смены пароля */
 .compact-password-section {
   margin-top: 2rem;
   padding-top: 2rem;
@@ -578,7 +575,6 @@ select.compact-input {
   gap: 1rem;
 }
 
-/* Валидация пароля */
 .password-validation {
   display: flex;
   flex-direction: column;
