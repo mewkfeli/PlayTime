@@ -6,6 +6,7 @@ export const userState = reactive({
   token: null,
   isAuthenticated: false,
   isLoading: true,
+  userRole: '',
 })
 
 export function initUserSession() {
@@ -13,16 +14,21 @@ export function initUserSession() {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
   if (userJson && userJson !== 'undefined' && userJson !== '') {
     try {
-      userState.user = JSON.parse(userJson)
-      userState.userId = userState.user?.userId || userState.user?.id
+      const userData = JSON.parse(userJson)
+      userState.user = userData
+      userState.userId = userData?.userId || userData?.id
       userState.token = token
+      // Исправлено: используем поле 'role' вместо 'userRole'
+      userState.userRole = userData?.role || userData?.userRole || 'Пользователь'
       userState.isAuthenticated = true
+
+      console.log('User session initialized:', {
+        role: userState.userRole,
+        userData: userData,
+      })
     } catch (e) {
-      userState.user = null
-      userState.userId = null
-      userState.token = null
-      userState.isAuthenticated = false
       console.warn('Ошибка парсинга ', e)
+      clearUserData()
     }
   }
   userState.isLoading = false
@@ -32,22 +38,36 @@ export function initUserSession() {
 export function login(userData, token) {
   userState.user = userData
   userState.userId = userData?.userId || userData?.id
+  // Исправлено: используем поле 'role' вместо 'userRole'
+  userState.userRole = userData?.role || userData?.userRole || 'Пользователь'
   userState.token = token
   userState.isAuthenticated = true
   localStorage.setItem('user', JSON.stringify(userData))
   localStorage.setItem('token', token)
+
+  console.log('User logged in:', {
+    role: userState.userRole,
+    userData: userData,
+  })
 }
 
 // Функция выхода
 export function logout() {
-  userState.user = null
-  userState.userId = null
-  userState.token = null
-  userState.isAuthenticated = false
+  console.log('User logging out')
+  clearUserData()
   localStorage.removeItem('user')
   localStorage.removeItem('token')
   sessionStorage.removeItem('user')
   sessionStorage.removeItem('token')
+}
+
+// Вспомогательная функция для очистки данных
+function clearUserData() {
+  userState.user = null
+  userState.userId = null
+  userState.token = null
+  userState.userRole = ''
+  userState.isAuthenticated = false
 }
 
 // Computed свойства для удобства
@@ -60,5 +80,12 @@ export const useUser = () => {
     isLoading: computed(() => userState.isLoading),
     userName: computed(() => userState.user?.name),
     userEmail: computed(() => userState.user?.email),
+    userRole: computed(() => userState.userRole),
+    // Добавляем computed свойство для админа
+    isAdmin: computed(() => {
+      const role = userState.userRole
+      console.log('Checking admin role:', role)
+      return role === 'Администратор'
+    }),
   }
 }

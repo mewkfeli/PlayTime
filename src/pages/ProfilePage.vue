@@ -2,9 +2,7 @@
   <div class="profile-page">
     <AppHeader />
     <main class="profile-section">
-      <!-- Показываем профиль только если авторизован -->
       <div v-if="isAuthenticated" class="profile-content">
-        <!-- Используем правильное имя компонента -->
         <PersonalInfoSection
           :user-data="userData"
           :edit-data="editData"

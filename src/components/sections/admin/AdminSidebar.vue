@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar">
-    <h2 class="sidebar-title"><i class="fas fa-cogs"></i> Админ-панель</h2>
+    <h2 class="sidebar-title">Админ-панель</h2>
     <div class="sidebar-nav">
       <div
         v-for="item in menuItems"
@@ -25,7 +25,6 @@ const menuItems = ref([
   { id: 'games', label: 'Управление играми', icon: 'fas fa-gamepad' },
   { id: 'events', label: 'Модерация событий', icon: 'fas fa-calendar-alt' },
   { id: 'users', label: 'Управление пользователями', icon: 'fas fa-users' },
-  { id: 'statistics', label: 'Статистика', icon: 'fas fa-chart-bar' },
 ])
 </script>
 

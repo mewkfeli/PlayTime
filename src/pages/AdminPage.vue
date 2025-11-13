@@ -1,67 +1,35 @@
 <template>
   <div class="admin-page">
     <AppHeader />
-    <div class="container">
-      <section class="admin-section">
-        <!-- Боковая панель -->
-        <AdminSidebar :active-tab="activeTab" @tab-change="changeTab" />
+    <div class="admin-container">
+      <AdminSidebar :active-tab="activeTab" @tab-change="handleTabChange" />
 
-        <!-- Основной контент -->
-        <div class="admin-content">
-          <!-- Заголовок -->
-          <div class="admin-header">
-            <h1 class="admin-title">{{ getTabTitle(activeTab) }}</h1>
-            <div class="admin-subtitle">{{ getTabSubtitle(activeTab) }}</div>
-          </div>
+      <div class="admin-content">
+        <!-- Управление играми -->
+        <GamesManagement v-if="activeTab === 'games'" />
 
-          <!-- Компоненты контента -->
-          <component :is="activeComponent" :key="activeTab" />
-        </div>
-      </section>
+        <!-- Модерация событий -->
+        <EventsModeration v-if="activeTab === 'events'" />
+
+        <!-- Управление пользователями -->
+        <UsersManagement v-if="activeTab === 'users'" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import AppHeader from '@/components/ui/AppHeader.vue'
 import AdminSidebar from '@/components/sections/admin/AdminSidebar.vue'
-import AdminDashboard from '@/components/sections/admin/AdminDashboard.vue'
+import GamesManagement from '@/components/sections/admin/GamesManagement.vue'
 import EventsModeration from '@/components/sections/admin/EventsModeration.vue'
 import UsersManagement from '@/components/sections/admin/UsersManagement.vue'
 
-const activeTab = ref('dashboard')
+const activeTab = ref('games')
 
-const tabComponents = {
-  dashboard: AdminDashboard,
-  events: EventsModeration,
-  users: UsersManagement,
-}
-
-const activeComponent = computed(() => {
-  return tabComponents[activeTab.value] || AdminDashboard
-})
-
-const changeTab = (tab) => {
-  activeTab.value = tab
-}
-
-const getTabTitle = (tab) => {
-  const titles = {
-    dashboard: 'Панель администратора',
-    events: 'Модерация событий',
-    users: 'Управление пользователями',
-  }
-  return titles[tab] || 'Админ-панель'
-}
-
-const getTabSubtitle = (tab) => {
-  const subtitles = {
-    dashboard: 'Обзор статистики и управления платформой',
-    events: 'Модерация и управление игровыми событиями',
-    users: 'Управление пользователями и правами доступа',
-  }
-  return subtitles[tab] || 'Управление платформой Play Time'
+const handleTabChange = (tabId) => {
+  activeTab.value = tabId
 }
 </script>
 
@@ -71,90 +39,53 @@ const getTabSubtitle = (tab) => {
   background: var(--light);
 }
 
-.container {
-  width: 100%;
-  max-width: 1600px;
-  margin: 0 auto;
-  position: relative;
-}
-
-.admin-section {
-  padding: 8rem 4rem 2rem;
-  display: flex;
+.admin-container {
+  display: grid;
+  grid-template-columns: 280px 1fr;
   gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 7rem 2rem 2rem;
 }
 
 .admin-content {
-  flex: 1;
+  min-height: 600px;
 }
 
-.admin-header {
+.tab-content {
   background: white;
   border-radius: 20px;
-  padding: 1rem 3rem;
+  padding: 2rem;
   box-shadow: var(--shadow);
-  margin-bottom: 2rem;
-  position: relative;
-  overflow: hidden;
+  min-height: 500px;
 }
 
-.admin-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, var(--primary), var(--accent));
-}
-
-.admin-title {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin-bottom: 0.5rem;
+.tab-content h2 {
   color: var(--secondary);
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
 }
 
-.admin-subtitle {
-  font-size: 1.2rem;
+.tab-content p {
   color: #666;
-  margin-bottom: 2rem;
-  font-weight: 500;
+  line-height: 1.6;
 }
 
 @media (max-width: 1200px) {
-  .admin-section {
-    flex-direction: column;
-  }
-}
-
-@media (max-width: 992px) {
-  .admin-title {
-    font-size: 2rem;
-  }
-
-  .admin-section {
-    padding: 6rem 2rem 2rem;
+  .admin-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 6rem 1rem 1rem;
   }
 }
 
 @media (max-width: 768px) {
-  .admin-section {
-    padding: 5rem 1.5rem 1.5rem;
-  }
-
-  .admin-header {
-    padding: 2rem 1.5rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .admin-title {
-    font-size: 1.8rem;
-  }
-
-  .admin-section {
+  .admin-container {
     padding: 5rem 1rem 1rem;
+  }
+
+  .tab-content {
+    padding: 1.5rem;
   }
 }
 </style>

@@ -9,7 +9,6 @@
       <button class="btn" @click="$emit('open-register')">
         <i class="play-circle"></i> Начать играть
       </button>
-      <button class="btn btn-outline"><i class="info-circle"></i> Подробнее</button>
     </div>
   </div>
 

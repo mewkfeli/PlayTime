@@ -30,7 +30,6 @@
       </div>
     </main>
 
-    <!-- Модальное окно создания события -->
     <div
       v-if="showCreateModal"
       class="modal-overlay"
@@ -55,7 +54,7 @@
           border-radius: 12px;
           width: 90%;
           max-width: 700px;
-          max-height: 90vh;
+          max-height: 100vh;
           overflow: auto;
           padding: 0;
         "

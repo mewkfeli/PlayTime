@@ -1,7 +1,7 @@
 <template>
   <header class="header">
     <div class="logo" @click="goToHome">
-      <i class="dice-d20"></i>
+      <i class="fas fa-dice-d20"></i>
       <span>Play Time</span>
     </div>
 
@@ -19,7 +19,12 @@
       <div class="nav-item" :class="{ active: $route.name === 'Profile' }" @click="goToProfile">
         Профиль
       </div>
-      <div class="nav-item" :class="{ active: $route.name === 'Admin' }" @click="goToAdmin">
+      <div
+        v-if="isAdmin"
+        class="nav-item admin-item"
+        :class="{ active: $route.name === 'Admin' }"
+        @click="goToAdmin"
+      >
         Админка
       </div>
     </nav>
@@ -29,9 +34,12 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUser } from '@/composables/userSession.js'
 
 const router = useRouter()
 const mobileMenuOpen = ref(false)
+
+const { isAdmin } = useUser()
 
 const toggleMobileMenu = () => {
   mobileMenuOpen.value = !mobileMenuOpen.value
@@ -59,6 +67,7 @@ const goToAdmin = () => {
 </script>
 
 <style scoped>
+/* Стили остаются без изменений */
 .header {
   display: flex;
   justify-content: space-between;
@@ -107,6 +116,9 @@ const goToAdmin = () => {
   transition: var(--transition);
   position: relative;
   padding: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .nav-item::after {
@@ -136,6 +148,10 @@ const goToAdmin = () => {
 
 .nav-item.active::after {
   width: 100%;
+}
+
+.admin-item {
+  position: relative;
 }
 
 .mobile-menu-btn {

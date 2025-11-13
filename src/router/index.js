@@ -3,6 +3,8 @@ import HomePage from '@/pages/HomePage.vue'
 import ProfilePage from '@/pages/ProfilePage.vue'
 import EventsPage from '@/pages/EventsPage.vue'
 import AdminPage from '@/pages/AdminPage.vue'
+import GamesManagement from '@/components/sections/admin/GamesManagement.vue'
+import UsersManagement from '@/components/sections/admin/UsersManagement.vue'
 
 const routes = [
   {
@@ -24,6 +26,18 @@ const routes = [
     path: '/admin',
     name: 'Admin',
     component: AdminPage,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/admin/games',
+    name: 'GamesManagement',
+    component: GamesManagement,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: UsersManagement,
     meta: { requiresAuth: true, requiresAdmin: true },
   },
 ]
