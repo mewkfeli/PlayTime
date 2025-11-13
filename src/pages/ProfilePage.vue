@@ -4,6 +4,7 @@
     <main class="profile-section">
       <div v-if="isAuthenticated" class="profile-content">
         <PersonalInfoSection
+          ref="personalInfoRef"
           :user-data="userData"
           :edit-data="editData"
           :is-editing="isEditing"
@@ -39,11 +40,14 @@ import PersonalInfoSection from '@/components/sections/profile/PersonalInfoSecti
 import { userService } from '@/api/userService'
 import { userState, initUserSession } from '@/composables/userSession'
 import { useRouter } from 'vue-router'
+
 const userData = ref({})
 const editData = ref({})
 const isEditing = ref(false)
 const validationErrors = ref([])
+const personalInfoRef = ref(null)
 const router = useRouter()
+
 const isAuthenticated = computed(() => userState.isAuthenticated)
 
 const loadUserProfile = async () => {
@@ -76,25 +80,63 @@ const saveProfile = async () => {
   try {
     validationErrors.value = []
 
-    if (!editData.value.name?.trim()) {
-      validationErrors.value.push('Имя обязательно для заполнения')
+    if (personalInfoRef.value && !personalInfoRef.value.validateForm()) {
+      validationErrors.value.push('Пожалуйста, заполните все обязательные поля правильно')
+      return
     }
-    if (!editData.value.email?.trim()) {
-      validationErrors.value.push('Email обязателен для заполнения')
-    }
-
-    if (validationErrors.value.length > 0) return
 
     const userId = userState.userId
     if (userId) {
-      await userService.updateProfile(userId, editData.value)
+      const dataToSend = {
+        name: editData.value.name?.trim(),
+        email: editData.value.email?.trim(),
+        birthDate: editData.value.birthDate,
+        cityId: editData.value.cityId,
+        contactInfo: editData.value.contactInfo?.trim(),
+        description: editData.value.description?.trim(),
+      }
+
+      const hasNewPassword = editData.value.newPassword?.trim()
+      if (hasNewPassword) {
+        dataToSend.currentPassword = editData.value.currentPassword
+        dataToSend.newPassword = editData.value.newPassword
+      }
+
+      console.log('Отправляемые данные:', dataToSend)
+
+      await userService.updateProfile(userId, dataToSend)
       await loadUserProfile()
       isEditing.value = false
+
+      editData.value.currentPassword = ''
+      editData.value.newPassword = ''
+      editData.value.confirmNewPassword = ''
+
       alert('Профиль успешно обновлен!')
     }
   } catch (error) {
     console.error('Ошибка сохранения профиля:', error)
-    validationErrors.value.push('Ошибка при сохранении профиля')
+
+    if (error.response && error.response.data) {
+      const errorData = error.response.data
+
+      if (
+        errorData.message &&
+        (errorData.message.includes('пароль') ||
+          errorData.message.includes('password') ||
+          errorData.message.includes('текущий'))
+      ) {
+        validationErrors.value.push('Неверный текущий пароль')
+      } else if (errorData.message) {
+        validationErrors.value.push(errorData.message)
+      } else {
+        validationErrors.value.push('Ошибка при сохранении профиля')
+      }
+    } else if (error.message) {
+      validationErrors.value.push(error.message)
+    } else {
+      validationErrors.value.push('Ошибка при сохранении профиля')
+    }
   }
 }
 
@@ -207,6 +249,35 @@ onMounted(async () => {
 .btn-success:hover {
   background: #218838;
   transform: translateY(-2px);
+}
+
+.validation-errors {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 100%;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #e53e3e;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.validation-errors ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.validation-errors li {
+  color: #e53e3e;
+  margin-bottom: 0.25rem;
 }
 
 @media (max-width: 768px) {

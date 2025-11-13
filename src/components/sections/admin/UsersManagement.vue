@@ -114,14 +114,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
-// Состояния
 const loading = ref(false)
 const error = ref('')
 const users = ref([])
 const cities = ref([])
 const changingRoleId = ref(null)
 
-// Computed свойства
 const adminsCount = computed(() => {
   return users.value.filter(
     (user) =>
@@ -133,7 +131,6 @@ const regularUsersCount = computed(() => {
   return users.value.filter((user) => user.role === 'Пользователь' || user.role === 'User').length
 })
 
-// Загрузка пользователей
 const loadUsers = async () => {
   try {
     loading.value = true
@@ -146,11 +143,10 @@ const loadUsers = async () => {
     }
 
     const data = await response.json()
-    // Убираем пароль из данных пользователей
     users.value = Array.isArray(data)
       ? data.map((user) => ({
           ...user,
-          passwordHash: undefined, // Убираем пароль
+          passwordHash: undefined,
         }))
       : []
 
@@ -162,7 +158,6 @@ const loadUsers = async () => {
   }
 }
 
-// Загрузка городов
 const loadCities = async () => {
   try {
     const response = await fetch('http://localhost:5119/api/User/GetCity')
@@ -175,13 +170,11 @@ const loadCities = async () => {
   }
 }
 
-// Получение названия города
 const getCityName = (cityId) => {
   const city = cities.value.find((c) => c.cityId === cityId)
   return city ? city.cityName : `Город #${cityId}`
 }
 
-// Смена роли пользователя
 const changeUserRole = async (userId, newRole, userName) => {
   const currentUser = users.value.find((u) => u.userId === userId)
   if (!currentUser) return
@@ -191,7 +184,6 @@ const changeUserRole = async (userId, newRole, userName) => {
   )
 
   if (!confirmation) {
-    // Возвращаем предыдущее значение роли
     const originalUser = users.value.find((u) => u.userId === userId)
     if (originalUser) {
       originalUser.role = currentUser.role
@@ -224,11 +216,9 @@ const changeUserRole = async (userId, newRole, userName) => {
     const result = await response.text()
     alert(result || 'Роль успешно изменена!')
 
-    // Обновляем данные пользователей
     await loadUsers()
   } catch (err) {
     alert('Ошибка при изменении роли: ' + err.message)
-    // Возвращаем предыдущее значение роли при ошибке
     const user = users.value.find((u) => u.userId === userId)
     if (user) {
       user.role = currentUser.role
@@ -238,7 +228,6 @@ const changeUserRole = async (userId, newRole, userName) => {
   }
 }
 
-// Вспомогательные функции
 const formatDate = (dateString) => {
   if (!dateString) return ''
   try {
@@ -279,7 +268,6 @@ const getRoleClass = (role) => {
   }
 }
 
-// Инициализация
 onMounted(() => {
   loadUsers()
 })

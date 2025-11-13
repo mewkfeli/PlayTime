@@ -1,6 +1,5 @@
 <template>
   <div class="games-management">
-    <!-- Заголовок и кнопка добавления -->
     <div class="page-header">
       <h1 class="page-title">Управление играми</h1>
       <button class="btn btn-primary" @click="openAddModal">
@@ -9,7 +8,6 @@
       </button>
     </div>
 
-    <!-- Поиск -->
     <div class="search-section">
       <div class="search-input-container">
         <i class="fas fa-search search-icon"></i>
@@ -26,20 +24,17 @@
       </div>
     </div>
 
-    <!-- Состояния загрузки и ошибок -->
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
       <p>Загрузка игр...</p>
     </div>
 
     <div v-else-if="error" class="error-container">
-      <div class="error-icon">⚠️</div>
       <h2>Ошибка загрузки</h2>
       <p>{{ error }}</p>
       <button class="btn btn-primary" @click="loadGames">Попробовать снова</button>
     </div>
 
-    <!-- Таблица игр -->
     <div v-else class="games-table-container">
       <div class="table-header">
         <div class="table-stats">Найдено игр: {{ filteredGames.length }}</div>
@@ -89,7 +84,6 @@
       </div>
     </div>
 
-    <!-- Модальное окно добавления игры -->
     <div v-if="showAddModal" class="modal-overlay" @click.self="closeAddModal">
       <div class="modal-content">
         <div class="modal-header">
@@ -197,7 +191,6 @@
       </div>
     </div>
 
-    <!-- Модальное окно редактирования игры -->
     <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
       <div class="modal-content">
         <div class="modal-header">
@@ -310,7 +303,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
-// Состояния
 const loading = ref(false)
 const error = ref('')
 const games = ref([])
@@ -321,7 +313,6 @@ const showEditModal = ref(false)
 const addingGame = ref(false)
 const updatingGame = ref(false)
 
-// Форма новой игры
 const newGame = ref({
   gameName: '',
   genreId: '',
@@ -330,7 +321,6 @@ const newGame = ref({
   description: '',
 })
 
-// Форма редактирования игры
 const editGame = ref({
   gameId: '',
   gameName: '',
@@ -340,10 +330,8 @@ const editGame = ref({
   description: '',
 })
 
-// Ошибки формы
 const formErrors = ref({})
 
-// Загрузка игр
 const loadGames = async () => {
   try {
     loading.value = true
@@ -365,7 +353,6 @@ const loadGames = async () => {
   }
 }
 
-// Загрузка жанров
 const loadGenres = async () => {
   try {
     const response = await fetch('http://localhost:5119/api/Game/GetGenres')
@@ -380,24 +367,14 @@ const loadGenres = async () => {
     console.log('Загружены жанры:', genres.value)
   } catch (err) {
     console.error('Ошибка загрузки жанров:', err)
-    // Резервные данные на случай ошибки
-    genres.value = [
-      { genreId: 10, genreName: 'Абстрактные' },
-      { genreId: 11, genreName: 'Стратегия' },
-      { genreId: 12, genreName: 'Ролевые игры' },
-      { genreId: 13, genreName: 'Кооперативные' },
-      { genreId: 14, genreName: 'Семейные' },
-    ]
   }
 }
 
-// Получение названия жанра по ID
 const getGenreName = (genreId) => {
   const genre = genres.value.find((g) => g.genreId === genreId)
   return genre ? genre.genreName : `Жанр #${genreId}`
 }
 
-// Поиск игр
 const searchGames = async () => {
   if (!searchTerm.value.trim()) {
     await loadGames()
@@ -426,7 +403,6 @@ const searchGames = async () => {
   }
 }
 
-// Добавление игры
 const addGame = async () => {
   if (!validateForm(newGame.value)) return
 
@@ -459,7 +435,6 @@ const addGame = async () => {
   }
 }
 
-// Обновление игры
 const updateGame = async () => {
   if (!validateForm(editGame.value)) return
 
@@ -501,7 +476,6 @@ const updateGame = async () => {
   }
 }
 
-// Удаление игры
 const deleteGame = async (gameId) => {
   if (!confirm('Вы уверены, что хотите удалить эту игру?')) {
     return
@@ -526,7 +500,6 @@ const deleteGame = async (gameId) => {
   }
 }
 
-// Валидация формы
 const validateForm = (formData) => {
   formErrors.value = {}
 
@@ -554,7 +527,6 @@ const validateForm = (formData) => {
   return true
 }
 
-// Открытие модальных окон
 const openAddModal = () => {
   console.log('Opening add modal')
   showAddModal.value = true
@@ -569,7 +541,6 @@ const openEditModal = (game) => {
   formErrors.value = {}
 }
 
-// Закрытие модальных окон
 const closeAddModal = () => {
   showAddModal.value = false
   newGame.value = {
@@ -595,7 +566,6 @@ const closeEditModal = () => {
   formErrors.value = {}
 }
 
-// Поиск
 const handleSearch = () => {
   if (searchTerm.value.trim()) {
     searchGames()
@@ -619,12 +589,10 @@ const formatDate = (dateString) => {
   }
 }
 
-// Computed свойства
 const filteredGames = computed(() => {
   return games.value
 })
 
-// Инициализация
 onMounted(() => {
   loadGames()
   loadGenres()
@@ -632,7 +600,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Стили остаются без изменений */
 .games-management {
   padding: 2rem;
   max-width: 1200px;
@@ -974,6 +941,7 @@ onMounted(() => {
 .btn-primary {
   background: var(--primary);
   color: white;
+  border-radius: 36.5px;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -991,7 +959,6 @@ onMounted(() => {
   transform: translateY(-1px);
 }
 
-/* Стили для select */
 .form-input select {
   appearance: none;
   background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
@@ -1005,7 +972,6 @@ onMounted(() => {
   background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23333' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
   .games-management {
     padding: 1rem;
@@ -1039,5 +1005,72 @@ onMounted(() => {
     margin: 1rem;
     max-height: calc(100vh - 2rem);
   }
+}
+/* Модальные окны - исправленная версия */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 10001;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e0e0e0;
+  background: white;
+  border-radius: 12px 12px 0 0;
+  position: sticky;
+  top: 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: var(--secondary);
+  font-size: 1.5rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #666;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: #f0f0f0;
+}
+
+.modal-body {
+  padding: 2rem;
 }
 </style>

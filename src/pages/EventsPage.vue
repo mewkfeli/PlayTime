@@ -82,7 +82,7 @@
           <form @submit.prevent="createEvent">
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">Название события *</label>
+                <label class="form-label">Название события (мин. 10 знаков) *</label>
                 <input
                   type="text"
                   class="form-input"
@@ -251,13 +251,46 @@ async function fetchEventStats(eventId) {
   }
 }
 
+function checkIfUserJoined(apiEvent) {
+  if (!userState.isAuthenticated) {
+    return false
+  }
+
+  const currentUserId = userState.userId
+  const isJoined =
+    apiEvent.eventParticipants?.some((participant) => participant.userId === currentUserId) || false
+
+  return isJoined
+}
+
 async function mapEventWithStats(apiEvent) {
   const dateObj = new Date(apiEvent.eventDatetime)
   const stats = await fetchEventStats(apiEvent.eventId)
+
+  const isJoined = checkIfUserJoined(apiEvent)
+
+  const participantsCount = apiEvent.eventParticipants?.length || stats.participants || 0
+  const maxParticipants = apiEvent.maxParticipants || 0
+  const isFull = participantsCount >= maxParticipants
+
+  let gameName = 'Неизвестная игра'
+
+  if (apiEvent.game && apiEvent.game.gameName) {
+    gameName = apiEvent.game.gameName
+  } else if (apiEvent.gameName) {
+    gameName = apiEvent.gameName
+  } else if (apiEvent.gameId) {
+    const game = games.value.find((g) => g.gameId === apiEvent.gameId)
+    if (game) {
+      gameName = game.gameName
+    }
+  }
+
   return {
     id: apiEvent.eventId,
     title: apiEvent.eventName,
-    game: apiEvent.game,
+    game: gameName,
+    gameId: apiEvent.gameId,
     date: dateObj.toLocaleDateString('ru-RU'),
     time: dateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
     location: apiEvent.location,
@@ -265,12 +298,14 @@ async function mapEventWithStats(apiEvent) {
     gameType: apiEvent.gameType,
     playerCount: apiEvent.playerCount,
     status: apiEvent.status,
-    participants: stats.participants,
-    maxParticipants: apiEvent.maxParticipants,
+    participants: participantsCount,
+    maxParticipants: maxParticipants,
     organizer: stats.organizer,
     description: apiEvent.description,
-    players: apiEvent.eventParticipants?.map((p) => p.userName) || [],
+    players: apiEvent.eventParticipants?.map((p) => p.userName || p.name) || [],
     created: new Date(apiEvent.createdAt).toLocaleDateString('ru-RU'),
+    isJoined: isJoined,
+    isFull: isFull,
   }
 }
 
@@ -279,6 +314,7 @@ const fetchEvents = async () => {
   error.value = ''
   try {
     let data = []
+
     if (
       filters.value.city &&
       !filters.value.game &&
@@ -288,16 +324,48 @@ const fetchEvents = async () => {
       !filters.value.search
     ) {
       data = await eventService.getEventsByCity(filters.value.city)
-    } else {
+    } else if (hasActiveFilters()) {
       data = await eventService.filterEvents(filters.value)
+    } else {
+      data = await eventService.getEvents()
     }
+
     events.value = Array.isArray(data) ? await Promise.all(data.map(mapEventWithStats)) : []
-  } catch (e) {
-    error.value = 'Ошибка загрузки событий: ' + (e?.message || e)
+  } catch {
     events.value = []
   } finally {
     loading.value = false
   }
+}
+
+const updateEventAfterJoin = (eventId) => {
+  console.log('Обновляем состояние события локально:', eventId)
+
+  const eventIndex = events.value.findIndex((event) => event.id === eventId)
+  if (eventIndex === -1) {
+    console.log('Событие не найдено в списке')
+    return
+  }
+
+  events.value[eventIndex] = {
+    ...events.value[eventIndex],
+    isJoined: true,
+    participants: events.value[eventIndex].participants + 1,
+    isFull: events.value[eventIndex].participants + 1 >= events.value[eventIndex].maxParticipants,
+  }
+
+  console.log('Событие обновлено локально:', events.value[eventIndex])
+}
+
+const hasActiveFilters = () => {
+  return (
+    filters.value.city ||
+    filters.value.game ||
+    filters.value.date ||
+    filters.value.players ||
+    filters.value.status ||
+    filters.value.search
+  )
 }
 
 const createEvent = async () => {
@@ -307,50 +375,105 @@ const createEvent = async () => {
   try {
     const currentUserId = userState.userId
 
+    if (!currentUserId) {
+      throw new Error('Пользователь не авторизован')
+    }
+
     const eventData = {
       ...newEvent.value,
       organizerId: currentUserId,
     }
 
-    console.log('Отправка данных события:', eventData)
+    await eventService.addEvent(eventData)
 
-    const response = await eventService.addEvent(eventData)
-
-    if (response.message) {
-      alert('Событие успешно создано!')
-      showCreateModal.value = false
-      resetEventForm()
-      await fetchEvents()
-    }
+    alert('Событие успешно создано!')
+    showCreateModal.value = false
+    resetEventForm()
+    await fetchEvents()
   } catch (error) {
     console.error('Ошибка создания события:', error)
-    alert('Ошибка при создании события: ' + (error.response?.data || error.message))
+
+    let errorMessage = 'Ошибка при создании события'
+
+    if (error.response) {
+      const serverError = error.response.data
+
+      if (error.response.status === 400) {
+        errorMessage = 'Некорректные данные события'
+        if (serverError.errors) {
+          const validationErrors = Object.values(serverError.errors).join(', ')
+          errorMessage += `: ${validationErrors}`
+        } else if (serverError.message) {
+          errorMessage = serverError.message
+        }
+      } else if (error.response.status === 401) {
+        errorMessage = 'Необходима авторизация'
+      } else if (error.response.status === 403) {
+        errorMessage = 'Недостаточно прав'
+      } else if (error.response.status === 409) {
+        errorMessage = 'Событие уже существует'
+      } else if (error.response.status >= 500) {
+        errorMessage = 'Ошибка сервера, попробуйте позже'
+      }
+    } else if (error.request) {
+      errorMessage = 'Ошибка соединения с сервером'
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+
+    alert(errorMessage)
   } finally {
     isCreating.value = false
   }
 }
-
 const validateEventForm = () => {
+  const errors = []
+
   if (!newEvent.value.eventName.trim()) {
-    alert('Введите название события')
-    return false
+    errors.push('Введите название события')
+  } else if (newEvent.value.eventName.trim().length < 3) {
+    errors.push('Название события должно содержать минимум 3 символа')
   }
+
   if (!newEvent.value.gameId) {
-    alert('Выберите игру')
-    return false
+    errors.push('Выберите игру')
   }
+
   if (!newEvent.value.eventDatetime) {
-    alert('Укажите дату и время')
-    return false
+    errors.push('Укажите дату и время')
+  } else {
+    const selectedDate = new Date(newEvent.value.eventDatetime)
+    const now = new Date()
+
+    if (isNaN(selectedDate.getTime())) {
+      errors.push('Некорректная дата события')
+    } else if (selectedDate <= now) {
+      errors.push('Дата события должна быть в будущем')
+    } else {
+      const eventYear = selectedDate.getFullYear()
+      if (eventYear < 2020) {
+        errors.push('Дата события не может быть раньше 2020 года')
+      } else if (eventYear > 2030) {
+        errors.push('Дата события не может быть позже 2030 года')
+      }
+    }
   }
+
   if (!newEvent.value.location.trim()) {
-    alert('Укажите место проведения')
-    return false
+    errors.push('Укажите место проведения')
   }
+
   if (!newEvent.value.maxParticipants || newEvent.value.maxParticipants < 2) {
-    alert('Максимальное количество участников должно быть не менее 2')
+    errors.push('Максимальное количество участников должно быть не менее 2')
+  } else if (newEvent.value.maxParticipants > 50) {
+    errors.push('Максимальное количество участников не должно превышать 50')
+  }
+
+  if (errors.length > 0) {
+    alert(errors.join('\n'))
     return false
   }
+
   return true
 }
 
@@ -367,6 +490,7 @@ const resetEventForm = () => {
 
 onMounted(async () => {
   initUserSession()
+  console.log('Авторизованный пользователь:', userState.userId)
   await fetchGames()
   await fetchCities()
   await fetchEvents()
@@ -384,17 +508,18 @@ const handleSearch = (searchTerm) => {
   filters.value.search = searchTerm
 }
 
-const joinEvent = (event) => {
-  if (confirm(`Вы хотите присоединиться к событию "${event.title}"?`)) {
-    alert('Запрос на участие отправлен организатору!')
-  }
-}
-
 const viewEvent = (event) => {
   router.push(`/event/${event.id}`)
 }
-</script>
 
+const joinEvent = async (event) => {
+  try {
+    updateEventAfterJoin(event.id)
+  } catch (e) {
+    console.error('Ошибка при обновлении события:', e)
+  }
+}
+</script>
 <style scoped>
 .events-page {
   min-height: 100vh;
@@ -602,6 +727,7 @@ const viewEvent = (event) => {
 .btn-primary {
   background-color: var(--primary);
   color: white;
+  border-radius: 36.5px;
 }
 
 .btn-primary:hover:not(:disabled) {

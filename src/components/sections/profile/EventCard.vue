@@ -51,15 +51,66 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'EventCard',
-  props: {
-    event: {
-      type: Object,
-      required: true,
-    },
-  },
-  emits: ['edit', 'share'],
+<script setup>
+import { ref } from 'vue'
+import { eventService } from '@/api/userService'
+import { userState } from '@/composables/userSession'
+
+const props = defineProps({
+  event: {
+    type: Object,
+    required: true
+  }
+})
+
+const emit = defineEmits(['viewEvent', 'join'])
+
+const joining = ref(false)
+
+const handleJoin = async () => {
+  if (!userState.isAuthenticated) {
+    alert('Для записи на событие необходимо авторизоваться')
+    return
+  }
+
+  const userId = userState.userId
+  if (!userId) {
+    alert('Ошибка: пользователь не идентифицирован')
+    return
+  }
+
+  joining.value = true
+
+  try {
+    await eventService.joinEvent(props.event.id, userId)
+
+    // Отправляем событие с ID для обновления
+    emit('join', { id: props.event.id })
+
+    alert(`Вы успешно записались на событие: ${props.event.title}`)
+  } catch (error) {
+    const errorMessage = getErrorMessage(error)
+    alert(errorMessage)
+  } finally {
+    joining.value = false
+  }
+}
+
+const getErrorMessage = (error) => {
+  const message = error.message || error.toString()
+
+  if (message.includes('уже записан')) {
+    return 'Вы уже записаны на это событие'
+  } else if (message.includes('максимальное количество')) {
+    return 'Достигнуто максимальное количество участников. Мест больше нет.'
+  } else if (message.includes('неактивное')) {
+    return 'Нельзя записаться на неактивное событие'
+  } else if (message.includes('не найдено')) {
+    return 'Событие не найдено'
+  } else if (message.includes('Пользователь не найден')) {
+    return 'Ошибка авторизации. Пожалуйста, войдите в систему заново.'
+  } else {
+    return 'Ошибка при записи на событие: ' + message
+  }
 }
 </script>

@@ -26,14 +26,15 @@
             <input
               v-else
               class="compact-input"
-              :class="{ 'input-error': hasError('имя') }"
+              :class="{ 'input-error': hasError('имя') || fieldErrors.name }"
               v-model="localEditData.name"
               type="text"
               placeholder="Введите имя"
-              @input="emitUpdate"
+              @input="(clearFieldError('name'), emitUpdate())"
+              required
             />
-            <div v-if="isEditing && hasError('имя')" class="field-error">
-              {{ getErrorText('имя') }}
+            <div v-if="isEditing && (hasError('имя') || fieldErrors.name)" class="field-error">
+              {{ getErrorText('имя') || fieldErrors.name }}
             </div>
           </div>
         </div>
@@ -49,14 +50,15 @@
             <input
               v-else
               class="compact-input"
-              :class="{ 'input-error': hasError('email') }"
+              :class="{ 'input-error': hasError('email') || fieldErrors.email }"
               v-model="localEditData.email"
               type="email"
               placeholder="Введите почту"
-              @input="emitUpdate"
+              @input="(clearFieldError('email'), emitUpdate())"
+              required
             />
-            <div v-if="isEditing && hasError('email')" class="field-error">
-              {{ getErrorText('email') }}
+            <div v-if="isEditing && (hasError('email') || fieldErrors.email)" class="field-error">
+              {{ getErrorText('email') || fieldErrors.email }}
             </div>
           </div>
         </div>
@@ -76,13 +78,17 @@
             <input
               v-else
               class="compact-input"
-              :class="{ 'input-error': hasError('дата рождения') }"
+              :class="{ 'input-error': hasError('дата рождения') || fieldErrors.birthDate }"
               v-model="localEditData.birthDate"
               type="date"
-              @input="emitUpdate"
+              @input="(clearFieldError('birthDate'), emitUpdate())"
+              required
             />
-            <div v-if="isEditing && hasError('дата рождения')" class="field-error">
-              {{ getErrorText('дата рождения') }}
+            <div
+              v-if="isEditing && (hasError('дата рождения') || fieldErrors.birthDate)"
+              class="field-error"
+            >
+              {{ getErrorText('дата рождения') || fieldErrors.birthDate }}
             </div>
           </div>
         </div>
@@ -100,10 +106,11 @@
             <div v-else class="city-select-container">
               <select
                 class="compact-input"
-                :class="{ 'input-error': hasError('город') }"
+                :class="{ 'input-error': hasError('город') || fieldErrors.cityId }"
                 v-model="localEditData.cityId"
-                @change="onCityChange"
+                @change="(clearFieldError('cityId'), onCityChange())"
                 :disabled="loadingCities"
+                required
               >
                 <option :value="null">Выберите город</option>
                 <option v-for="city in cities" :key="city.cityId" :value="city.cityId">
@@ -119,8 +126,8 @@
                 <span>Ошибка загрузки городов</span>
               </div>
             </div>
-            <div v-if="isEditing && hasError('город')" class="field-error">
-              {{ getErrorText('город') }}
+            <div v-if="isEditing && (hasError('город') || fieldErrors.cityId)" class="field-error">
+              {{ getErrorText('город') || fieldErrors.cityId }}
             </div>
           </div>
         </div>
@@ -140,14 +147,20 @@
             <input
               v-else
               class="compact-input"
-              :class="{ 'input-error': hasError('контактная информация') }"
+              :class="{
+                'input-error': hasError('контактная информация') || fieldErrors.contactInfo,
+              }"
               v-model="localEditData.contactInfo"
               type="text"
               placeholder="Телефон, социальные сети или другие контакты"
-              @input="emitUpdate"
+              @input="(clearFieldError('contactInfo'), emitUpdate())"
+              required
             />
-            <div v-if="isEditing && hasError('контактная информация')" class="field-error">
-              {{ getErrorText('контактная информация') }}
+            <div
+              v-if="isEditing && (hasError('контактная информация') || fieldErrors.contactInfo)"
+              class="field-error"
+            >
+              {{ getErrorText('контактная информация') || fieldErrors.contactInfo }}
             </div>
           </div>
         </div>
@@ -167,97 +180,20 @@
         <div v-else class="about-edit">
           <textarea
             class="compact-textarea"
-            :class="{ 'input-error': hasError('описание') }"
+            :class="{ 'input-error': hasError('описание') || fieldErrors.description }"
             v-model="localEditData.description"
             placeholder="Расскажите о своих интересах, хобби, игровых предпочтениях..."
             rows="3"
-            @input="emitUpdate"
+            @input="(clearFieldError('description'), emitUpdate())"
+            required
           ></textarea>
-          <div v-if="isEditing && hasError('описание')" class="field-error">
-            {{ getErrorText('описание') }}
+          <div
+            v-if="isEditing && (hasError('описание') || fieldErrors.description)"
+            class="field-error"
+          >
+            {{ getErrorText('описание') || fieldErrors.description }}
           </div>
           <div class="textarea-hint">Минимум 10 символов для описания</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="compact-password-section" v-if="isEditing">
-      <div class="section-header">
-        <h2 class="section-title">Смена пароля</h2>
-        <p class="section-subtitle">Заполните только если хотите изменить пароль</p>
-      </div>
-
-      <div class="compact-password-content">
-        <div class="compact-row">
-          <div class="compact-field">
-            <div class="field-header">
-              <i class="fas fa-lock field-icon"></i>
-              <span class="field-label">Текущий пароль</span>
-            </div>
-            <div class="field-content">
-              <input
-                class="compact-input"
-                :class="{ 'input-error': hasError('текущий пароль') || hasError('пароль') }"
-                v-model="localEditData.currentPassword"
-                type="password"
-                placeholder="Введите текущий пароль"
-                @input="emitUpdate"
-              />
-            </div>
-          </div>
-
-          <div class="compact-field">
-            <div class="field-header">
-              <i class="fas fa-key field-icon"></i>
-              <span class="field-label">Новый пароль</span>
-            </div>
-            <div class="field-content">
-              <input
-                class="compact-input"
-                :class="{ 'input-error': hasError('новый пароль') || hasError('пароль') }"
-                v-model="localEditData.newPassword"
-                type="password"
-                placeholder="Введите новый пароль"
-                @input="emitUpdate"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div class="compact-row">
-          <div class="compact-field full-width">
-            <div class="field-header">
-              <i class="fas fa-check-circle field-icon"></i>
-              <span class="field-label">Подтверждение нового пароля</span>
-            </div>
-            <div class="field-content">
-              <input
-                class="compact-input"
-                :class="{ 'input-error': hasError('подтверждение') || hasError('пароль') }"
-                v-model="localEditData.confirmNewPassword"
-                type="password"
-                placeholder="Повторите новый пароль"
-                @input="emitUpdate"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div class="password-validation" v-if="showPasswordValidation">
-          <div class="validation-item" :class="{ valid: isPasswordMatch }">
-            <i class="fas" :class="isPasswordMatch ? 'fa-check' : 'fa-times'"></i>
-            <span>Пароли совпадают</span>
-          </div>
-          <div class="validation-item" :class="{ valid: isPasswordStrong }">
-            <i class="fas" :class="isPasswordStrong ? 'fa-check' : 'fa-times'"></i>
-            <span>Пароль достаточно надежный</span>
-          </div>
-        </div>
-
-        <div v-if="isEditing && hasPasswordErrors" class="password-errors">
-          <div class="field-error" v-for="error in passwordErrors" :key="error">
-            {{ error }}
-          </div>
         </div>
       </div>
     </div>
@@ -291,6 +227,14 @@ export default {
       cities: [],
       loadingCities: false,
       citiesError: false,
+      fieldErrors: {
+        name: '',
+        email: '',
+        birthDate: '',
+        cityId: '',
+        contactInfo: '',
+        description: '',
+      },
     }
   },
   computed: {
@@ -309,33 +253,6 @@ export default {
       }
 
       return ''
-    },
-
-    showPasswordValidation() {
-      return (
-        this.isEditing && (this.localEditData.newPassword || this.localEditData.confirmNewPassword)
-      )
-    },
-    isPasswordMatch() {
-      return (
-        this.localEditData.newPassword === this.localEditData.confirmNewPassword &&
-        this.localEditData.newPassword !== ''
-      )
-    },
-    isPasswordStrong() {
-      return this.localEditData.newPassword && this.localEditData.newPassword.length >= 6
-    },
-    hasPasswordErrors() {
-      return this.passwordErrors.length > 0
-    },
-    passwordErrors() {
-      return this.validationErrors.filter(
-        (error) =>
-          error.toLowerCase().includes('пароль') ||
-          error.toLowerCase().includes('текущий') ||
-          error.toLowerCase().includes('новый') ||
-          error.toLowerCase().includes('подтверждение'),
-      )
     },
   },
   watch: {
@@ -368,6 +285,76 @@ export default {
     },
   },
   methods: {
+    validateForm() {
+      this.clearAllFieldErrors()
+
+      let isValid = true
+
+      if (!this.localEditData.name?.trim()) {
+        this.fieldErrors.name = 'Имя обязательно для заполнения'
+        isValid = false
+      }
+
+      if (!this.localEditData.email?.trim()) {
+        this.fieldErrors.email = 'Email обязателен для заполнения'
+        isValid = false
+      } else if (!this.isValidEmail(this.localEditData.email)) {
+        this.fieldErrors.email = 'Введите корректный email адрес'
+        isValid = false
+      }
+
+      if (!this.localEditData.birthDate) {
+        this.fieldErrors.birthDate = 'Дата рождения обязательна для заполнения'
+        isValid = false
+      } else if (!this.isValidBirthDate(this.localEditData.birthDate)) {
+        this.fieldErrors.birthDate = 'Дата рождения должна быть в прошлом'
+        isValid = false
+      }
+
+      if (!this.localEditData.cityId) {
+        this.fieldErrors.cityId = 'Город обязателен для выбора'
+        isValid = false
+      }
+
+      if (!this.localEditData.contactInfo?.trim()) {
+        this.fieldErrors.contactInfo = 'Контактная информация обязательна для заполнения'
+        isValid = false
+      }
+
+      if (!this.localEditData.description?.trim()) {
+        this.fieldErrors.description = 'Описание обязательно для заполнения'
+        isValid = false
+      } else if (this.localEditData.description.trim().length < 10) {
+        this.fieldErrors.description = 'Описание должно содержать минимум 10 символов'
+        isValid = false
+      }
+
+      return isValid
+    },
+
+    isValidEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      return emailRegex.test(email)
+    },
+
+    isValidBirthDate(dateString) {
+      const birthDate = new Date(dateString)
+      const today = new Date()
+      return birthDate < today
+    },
+
+    clearFieldError(fieldName) {
+      if (this.fieldErrors[fieldName]) {
+        this.fieldErrors[fieldName] = ''
+      }
+    },
+
+    clearAllFieldErrors() {
+      Object.keys(this.fieldErrors).forEach((key) => {
+        this.fieldErrors[key] = ''
+      })
+    },
+
     async handleLogout() {
       if (confirm('Вы уверены, что хотите выйти из аккаунта?')) {
         try {
@@ -382,6 +369,7 @@ export default {
         }
       }
     },
+
     async loadCities() {
       this.loadingCities = true
       this.citiesError = false
@@ -426,7 +414,6 @@ export default {
     },
 
     emitUpdate() {
-      // провека что отправляем правильные данные
       const updateData = {
         ...this.localEditData,
         cityId: this.localEditData.cityId || null,
@@ -450,6 +437,7 @@ export default {
 </script>
 
 <style scoped>
+/* Стили остаются без изменений */
 .compact-personal-info {
   margin: 1.5rem 0;
   padding: 0;
@@ -681,42 +669,6 @@ select.compact-input:disabled {
   text-align: center;
 }
 
-.compact-password-section {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 2px solid #f0f0f0;
-}
-
-.compact-password-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.password-validation {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.validation-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #e74c3c;
-  transition: color 0.3s ease;
-}
-
-.validation-item.valid {
-  color: #27ae60;
-}
-
-.validation-item i {
-  width: 16px;
-}
-
 .required-star {
   color: #e53e3e;
   margin-left: 0.25rem;
@@ -746,21 +698,6 @@ select.compact-input:disabled {
   font-size: 0.7rem;
 }
 
-.password-errors {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: #fff5f5;
-  border: 1px solid #fed7d7;
-  border-radius: 6px;
-}
-
-.password-errors .field-error {
-  margin-bottom: 0.25rem;
-}
-
-.password-errors .field-error:last-child {
-  margin-bottom: 0;
-}
 .header-actions {
   display: flex;
   justify-content: center;

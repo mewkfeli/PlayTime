@@ -118,7 +118,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
-// Состояния
 const loading = ref(false)
 const error = ref('')
 const events = ref([])
@@ -126,7 +125,6 @@ const users = ref([])
 const games = ref([])
 const cancelingEventId = ref(null)
 
-// Computed свойства
 const activeEventsCount = computed(() => {
   return events.value.filter((event) => event.status === 'Активно').length
 })
@@ -135,7 +133,6 @@ const canceledEventsCount = computed(() => {
   return events.value.filter((event) => event.status === 'Отменено').length
 })
 
-// Загрузка событий
 const loadEvents = async () => {
   try {
     loading.value = true
@@ -159,7 +156,6 @@ const loadEvents = async () => {
   }
 }
 
-// Загрузка пользователей
 const loadUsers = async () => {
   try {
     const response = await fetch('http://localhost:5119/api/User/GetUsers')
@@ -168,11 +164,10 @@ const loadUsers = async () => {
       users.value = Array.isArray(data) ? data : []
     }
   } catch {
-    // Игнорируем ошибку загрузки пользователей
+    // заглушка
   }
 }
 
-// Загрузка игр
 const loadGames = async () => {
   try {
     const response = await fetch('http://localhost:5119/api/Game/GetGames')
@@ -181,23 +176,20 @@ const loadGames = async () => {
       games.value = Array.isArray(data) ? data : []
     }
   } catch {
-    // Игнорируем ошибку загрузки игр
+    // заглушка
   }
 }
 
-// Получение имени организатора
 const getOrganizerName = (organizerId) => {
   const user = users.value.find((u) => u.userId === organizerId)
   return user ? user.name : null
 }
 
-// Получение названия игры
 const getGameName = (gameId) => {
   const game = games.value.find((g) => g.gameId === gameId)
   return game ? game.gameName : `Игра #${gameId}`
 }
 
-// Отмена события
 const cancelEvent = async (eventId, eventTitle) => {
   const event = events.value.find((e) => e.eventId === eventId)
   if (!event) {
@@ -248,7 +240,6 @@ const cancelEvent = async (eventId, eventTitle) => {
 
     const result = await response.text()
 
-    // Обновляем статус события локально
     const eventIndex = events.value.findIndex((e) => e.eventId === eventId)
     if (eventIndex !== -1) {
       events.value[eventIndex].status = 'Отменено'
@@ -272,7 +263,6 @@ const cancelEvent = async (eventId, eventTitle) => {
   }
 }
 
-// Вспомогательные функции
 const formatDateTime = (dateString) => {
   if (!dateString) return ''
   try {
@@ -302,7 +292,6 @@ const getStatusClass = (status) => {
   }
 }
 
-// Инициализация
 onMounted(() => {
   loadEvents()
 })

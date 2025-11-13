@@ -18,7 +18,6 @@ export function initUserSession() {
       userState.user = userData
       userState.userId = userData?.userId || userData?.id
       userState.token = token
-      // Исправлено: используем поле 'role' вместо 'userRole'
       userState.userRole = userData?.role || userData?.userRole || 'Пользователь'
       userState.isAuthenticated = true
 
@@ -34,24 +33,16 @@ export function initUserSession() {
   userState.isLoading = false
 }
 
-// Функция входа
 export function login(userData, token) {
   userState.user = userData
   userState.userId = userData?.userId || userData?.id
-  // Исправлено: используем поле 'role' вместо 'userRole'
   userState.userRole = userData?.role || userData?.userRole || 'Пользователь'
   userState.token = token
   userState.isAuthenticated = true
   localStorage.setItem('user', JSON.stringify(userData))
   localStorage.setItem('token', token)
-
-  console.log('User logged in:', {
-    role: userState.userRole,
-    userData: userData,
-  })
 }
 
-// Функция выхода
 export function logout() {
   console.log('User logging out')
   clearUserData()
@@ -61,7 +52,6 @@ export function logout() {
   sessionStorage.removeItem('token')
 }
 
-// Вспомогательная функция для очистки данных
 function clearUserData() {
   userState.user = null
   userState.userId = null
@@ -70,7 +60,6 @@ function clearUserData() {
   userState.isAuthenticated = false
 }
 
-// Computed свойства для удобства
 export const useUser = () => {
   return {
     user: computed(() => userState.user),
@@ -81,7 +70,7 @@ export const useUser = () => {
     userName: computed(() => userState.user?.name),
     userEmail: computed(() => userState.user?.email),
     userRole: computed(() => userState.userRole),
-    // Добавляем computed свойство для админа
+
     isAdmin: computed(() => {
       const role = userState.userRole
       console.log('Checking admin role:', role)

@@ -411,4 +411,7 @@ export default {
   opacity: 0.6;
   cursor: not-allowed;
 }
+.profile-actions button {
+  border-radius: 36.5px;
+}
 </style>

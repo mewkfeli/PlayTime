@@ -65,4 +65,13 @@ export const eventService = {
     const response = await api.post('/Event/AddEvents', eventData)
     return response.data
   },
+  async joinEvent(eventId, userId) {
+    try {
+      const response = await api.post(`/Event/JoinEvent?eventId=${eventId}&userId=${userId}`)
+      return response.data
+    } catch (error) {
+      console.error('ОШИБКА ПРИСОЕДИНЕНИЯ', error)
+      throw error
+    }
+  },
 }
