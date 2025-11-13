@@ -2,7 +2,7 @@
   <div class="profile-card">
     <div class="profile-actions" v-if="!isEditing">
       <button class="btn btn-primary" @click="startEditing">
-        <i class="fas fa-edit"></i> Редактировать данные
+        <i class="edit"></i> Редактировать данные
       </button>
     </div>
 
@@ -19,17 +19,16 @@
 
     <div class="action-buttons" v-if="isEditing">
       <button class="btn btn-success" @click="handleSave" :disabled="isLoading || !isFormValid">
-        <i class="fas fa-save"></i> {{ isLoading ? 'Сохранение...' : 'Сохранить' }}
+        <i class="save"></i> {{ isLoading ? 'Сохранение...' : 'Сохранить' }}
       </button>
       <button class="btn btn-secondary" @click="handleCancelEdit" :disabled="isLoading">
-        <i class="fas fa-times"></i> Отменить
+        <i class="times"></i> Отменить
       </button>
     </div>
 
-    <!-- Валидационные сообщения -->
     <div v-if="isEditing && validationErrors.length" class="validation-errors">
       <div class="error-message">
-        <i class="fas fa-exclamation-triangle"></i>
+        <i class="exclamation-triangle"></i>
         <span>Пожалуйста, заполните все обязательные поля:</span>
         <ul>
           <li v-for="error in validationErrors" :key="error">{{ error }}</li>

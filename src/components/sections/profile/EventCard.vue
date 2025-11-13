@@ -5,24 +5,24 @@
         <h3 class="event-title">{{ event.title }}</h3>
         <div class="event-game">{{ event.game }}</div>
       </div>
-      <div class="event-date"><i class="fas fa-calendar-alt"></i> {{ event.date }}</div>
+      <div class="event-date"><i class="calendar-alt"></i> {{ event.date }}</div>
     </div>
 
     <div class="event-details">
       <div class="event-detail">
-        <i class="fas fa-clock"></i>
+        <i class="clock"></i>
         <span>{{ event.time }}</span>
       </div>
       <div class="event-detail">
-        <i class="fas fa-map-marker-alt"></i>
+        <i class="map-marker-alt"></i>
         <span>{{ event.location }}</span>
       </div>
       <div class="event-detail">
-        <i class="fas fa-users"></i>
+        <i class="users"></i>
         <span>{{ event.participants }} участников</span>
       </div>
       <div class="event-detail">
-        <i class="fas fa-calendar-plus"></i>
+        <i class="calendar-plus"></i>
         <span>Создано: {{ event.created }}</span>
       </div>
     </div>
@@ -35,17 +35,17 @@
       <div class="players-title">Участники:</div>
       <div class="players-grid">
         <div v-for="player in event.players" :key="player" class="player-badge">
-          <i class="fas fa-user"></i> {{ player }}
+          <i class="user"></i> {{ player }}
         </div>
       </div>
     </div>
 
     <div class="event-actions">
       <button class="btn btn-small" @click="$emit('edit', event)">
-        <i class="fas fa-edit"></i> Редактировать
+        <i class="edit"></i> Редактировать
       </button>
       <button class="btn btn-small btn-outline" @click="$emit('share', event)">
-        <i class="fas fa-share-alt"></i> Поделиться
+        <i class="share-alt"></i> Поделиться
       </button>
     </div>
   </div>

@@ -1,14 +1,17 @@
 <template>
   <div class="compact-personal-info">
-    <!-- Заголовок секции -->
     <div class="section-header">
-      <h2 class="section-title">Личная информация</h2>
+      <div class="header-actions">
+        <h2 class="section-title">Личная информация</h2>
+        <button class="logout-btn" @click="handleLogout" title="Выйти из аккаунта">
+          <i class="fas fa-sign-out-alt"></i>
+          Выйти
+        </button>
+      </div>
       <p class="section-subtitle">Основные данные профиля</p>
     </div>
 
-    <!-- Компактная сетка -->
     <div class="compact-info-grid">
-      <!-- Первая строка: Имя и Email -->
       <div class="compact-row">
         <div class="compact-field">
           <div class="field-header">
@@ -59,7 +62,6 @@
         </div>
       </div>
 
-      <!-- Вторая строка: Дата рождения и Город -->
       <div class="compact-row">
         <div class="compact-field">
           <div class="field-header">
@@ -93,20 +95,30 @@
           </div>
           <div class="field-content">
             <div class="field-value" v-if="!isEditing">
-              {{ getCityName(userData.cityId) || 'Не указано' }}
+              {{ displayCityName || 'Не указано' }}
             </div>
-            <select
-              v-else
-              class="compact-input"
-              :class="{ 'input-error': hasError('город') }"
-              v-model="localEditData.cityId"
-              @change="emitUpdate"
-            >
-              <option :value="null">Выберите город</option>
-              <option v-for="city in cities" :key="city.cityId" :value="city.cityId">
-                {{ city.name }}
-              </option>
-            </select>
+            <div v-else class="city-select-container">
+              <select
+                class="compact-input"
+                :class="{ 'input-error': hasError('город') }"
+                v-model="localEditData.cityId"
+                @change="onCityChange"
+                :disabled="loadingCities"
+              >
+                <option :value="null">Выберите город</option>
+                <option v-for="city in cities" :key="city.cityId" :value="city.cityId">
+                  {{ city.cityName }}
+                </option>
+              </select>
+              <div v-if="loadingCities" class="loading-cities">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Загрузка городов...</span>
+              </div>
+              <div v-if="citiesError" class="cities-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Ошибка загрузки городов</span>
+              </div>
+            </div>
             <div v-if="isEditing && hasError('город')" class="field-error">
               {{ getErrorText('город') }}
             </div>
@@ -142,7 +154,6 @@
       </div>
     </div>
 
-    <!-- Компактная секция "О себе" -->
     <div class="compact-about-section">
       <div class="section-header">
         <h2 class="section-title">О себе</h2>
@@ -170,7 +181,6 @@
       </div>
     </div>
 
-    <!-- Секция смены пароля -->
     <div class="compact-password-section" v-if="isEditing">
       <div class="section-header">
         <h2 class="section-title">Смена пароля</h2>
@@ -233,7 +243,6 @@
           </div>
         </div>
 
-        <!-- Валидация пароля -->
         <div class="password-validation" v-if="showPasswordValidation">
           <div class="validation-item" :class="{ valid: isPasswordMatch }">
             <i class="fas" :class="isPasswordMatch ? 'fa-check' : 'fa-times'"></i>
@@ -245,7 +254,6 @@
           </div>
         </div>
 
-        <!-- Общие ошибки пароля -->
         <div v-if="isEditing && hasPasswordErrors" class="password-errors">
           <div class="field-error" v-for="error in passwordErrors" :key="error">
             {{ error }}
@@ -255,7 +263,11 @@
     </div>
   </div>
 </template>
+
 <script>
+import { userService } from '@/api/userService'
+import { logout } from '@/composables/userSession'
+
 export default {
   name: 'CompactPersonalInfo',
   props: {
@@ -268,10 +280,6 @@ export default {
       default: () => ({}),
     },
     isEditing: Boolean,
-    cities: {
-      type: Array,
-      default: () => [],
-    },
     validationErrors: {
       type: Array,
       default: () => [],
@@ -280,9 +288,29 @@ export default {
   data() {
     return {
       localEditData: { ...this.editData },
+      cities: [],
+      loadingCities: false,
+      citiesError: false,
     }
   },
   computed: {
+    displayCityName() {
+      const cityId = this.userData.cityId
+
+      if (!cityId) return ''
+
+      if (this.cities.length > 0) {
+        const city = this.cities.find((c) => c.cityId === cityId)
+        if (city) return city.cityName
+      }
+
+      if (this.userData.cityName) {
+        return this.userData.cityName
+      }
+
+      return ''
+    },
+
     showPasswordValidation() {
       return (
         this.isEditing && (this.localEditData.newPassword || this.localEditData.confirmNewPassword)
@@ -314,25 +342,97 @@ export default {
     editData: {
       handler(newVal) {
         this.localEditData = { ...newVal }
+        if (newVal.cityId !== undefined) {
+          this.localEditData.cityId = newVal.cityId
+        }
+      },
+      deep: true,
+      immediate: true,
+    },
+    isEditing: {
+      handler(newVal) {
+        if (newVal && this.cities.length === 0) {
+          this.loadCities()
+        }
+      },
+      immediate: true,
+    },
+    userData: {
+      handler(newVal) {
+        if (newVal.cityId && this.cities.length === 0 && !this.isEditing) {
+          this.loadCities()
+        }
       },
       deep: true,
       immediate: true,
     },
   },
   methods: {
+    async handleLogout() {
+      if (confirm('Вы уверены, что хотите выйти из аккаунта?')) {
+        try {
+          logout()
+
+          alert('Вы успешно вышли из аккаунта')
+
+          this.$router.push('/')
+        } catch (error) {
+          console.error('Ошибка при выходе:', error)
+          alert('Произошла ошибка при выходе из аккаунта')
+        }
+      }
+    },
+    async loadCities() {
+      this.loadingCities = true
+      this.citiesError = false
+      try {
+        const data = await userService.getCities()
+
+        if (Array.isArray(data)) {
+          this.cities = data
+        } else if (data && typeof data === 'object') {
+          this.cities = Object.values(data)
+        } else {
+          this.cities = []
+        }
+
+        console.log('Загруженные города:', this.cities)
+        console.log('Текущий cityId пользователя:', this.userData.cityId)
+      } catch (error) {
+        console.error('Ошибка загрузки городов:', error)
+        this.citiesError = true
+        this.cities = []
+      } finally {
+        this.loadingCities = false
+      }
+    },
+
+    onCityChange() {
+      console.log('Выбран город ID:', this.localEditData.cityId)
+      this.emitUpdate()
+    },
+
     hasError(fieldName) {
       return this.validationErrors.some((error) =>
         error.toLowerCase().includes(fieldName.toLowerCase()),
       )
     },
+
     getErrorText(fieldName) {
       const error = this.validationErrors.find((error) =>
         error.toLowerCase().includes(fieldName.toLowerCase()),
       )
       return error || ''
     },
+
     emitUpdate() {
-      this.$emit('update:editData', { ...this.localEditData })
+      // провека что отправляем правильные данные
+      const updateData = {
+        ...this.localEditData,
+        cityId: this.localEditData.cityId || null,
+      }
+      console.log('Отправляемые данные:', updateData)
+      this.$emit('update:editData', updateData)
     },
 
     formatDate(dateString) {
@@ -344,12 +444,6 @@ export default {
         console.error('Ошибка форматирования даты:', error)
         return dateString
       }
-    },
-
-    getCityName(cityId) {
-      if (!cityId || !this.cities.length) return ''
-      const city = this.cities.find((c) => c.cityId === cityId)
-      return city ? city.name : ''
     },
   },
 }
@@ -373,18 +467,6 @@ export default {
   margin-bottom: 0.5rem;
   position: relative;
   display: inline-block;
-}
-
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 3px;
-  background: var(--primary);
-  border-radius: 2px;
 }
 
 .section-subtitle {
@@ -455,6 +537,7 @@ export default {
 
 .field-content {
   padding-left: 0.1rem;
+  position: relative;
 }
 
 .field-value {
@@ -491,6 +574,41 @@ export default {
 
 select.compact-input {
   cursor: pointer;
+}
+
+select.compact-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.city-select-container {
+  position: relative;
+}
+
+.loading-cities,
+.cities-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.loading-cities {
+  color: #666;
+  background: #f8f9ff;
+}
+
+.cities-error {
+  color: #e53e3e;
+  background: #fff5f5;
+}
+
+.loading-cities i,
+.cities-error i {
+  font-size: 0.9rem;
 }
 
 .compact-about-section {
@@ -598,20 +716,6 @@ select.compact-input {
 .validation-item i {
   width: 16px;
 }
-.required-star {
-  color: #e53e3e;
-  margin-left: 0.25rem;
-}
-
-.input-error {
-  border-color: #e53e3e !important;
-  background-color: #fff5f5 !important;
-}
-
-.compact-input.input-error:focus {
-  border-color: #e53e3e !important;
-  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1) !important;
-}
 
 .required-star {
   color: #e53e3e;
@@ -656,5 +760,71 @@ select.compact-input {
 
 .password-errors .field-error:last-child {
   margin-bottom: 0;
+}
+.header-actions {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.logout-btn:hover {
+  background: linear-gradient(135deg, #ff5252, #e53935);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+}
+
+.logout-btn i {
+  font-size: 0.8rem;
+}
+
+.compact-personal-info {
+  width: 1000px;
+  margin: 1.5rem 0;
+  padding: 0;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.section-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--secondary);
+  margin-bottom: 0.5rem;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.section-subtitle {
+  color: #666;
+  font-size: 1rem;
+  margin-top: 0.8rem;
 }
 </style>

@@ -2,7 +2,7 @@
   <div class="modal-overlay" :class="{ active: isOpen }" @click="closeOnOverlay">
     <div class="modal" @click.stop>
       <button class="modal-close" @click="closeModal">
-        <i class="fas fa-times"></i>
+        <i class="times"></i>
       </button>
 
       <div class="modal-header">

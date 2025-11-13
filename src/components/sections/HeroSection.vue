@@ -7,9 +7,9 @@
     </div>
     <div class="btn-container">
       <button class="btn" @click="$emit('open-register')">
-        <i class="fas fa-play-circle"></i> Начать играть
+        <i class="play-circle"></i> Начать играть
       </button>
-      <button class="btn btn-outline"><i class="fas fa-info-circle"></i> Подробнее</button>
+      <button class="btn btn-outline"><i class="info-circle"></i> Подробнее</button>
     </div>
   </div>
 

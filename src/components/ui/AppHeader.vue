@@ -1,7 +1,7 @@
 <template>
   <header class="header">
     <div class="logo" @click="goToHome">
-      <i class="fas fa-dice-d20"></i>
+      <i class="dice-d20"></i>
       <span>Play Time</span>
     </div>
 

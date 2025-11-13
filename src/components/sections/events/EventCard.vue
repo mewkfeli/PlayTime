@@ -29,7 +29,7 @@
     <div class="event-card-meta">
       <div class="event-meta-item">
         <div class="event-meta-icon">
-          <i class="fas fa-map-marker-alt"></i>
+          <i class="map-marker-alt"></i>
         </div>
         <div class="event-meta-content">
           <h4>Место</h4>
@@ -38,7 +38,7 @@
       </div>
       <div class="event-meta-item">
         <div class="event-meta-icon">
-          <i class="fas fa-calendar-day"></i>
+          <i class="calendar-day"></i>
         </div>
         <div class="event-meta-content">
           <h4>Дата и время проведения</h4>
@@ -47,7 +47,7 @@
       </div>
       <div class="event-meta-item">
         <div class="event-meta-icon">
-          <i class="fas fa-user-tie"></i>
+          <i class="user-tie"></i>
         </div>
         <div class="event-meta-content">
           <h4>Организатор</h4>
@@ -64,7 +64,7 @@
 
     <div class="event-card-actions">
       <button class="btn btn-outline btn-small" @click="emit('join', event)">
-        <i class="fas fa-user-plus"></i> Присоединиться
+        <i class="user-plus"></i> Присоединиться
       </button>
     </div>
   </div>
@@ -85,7 +85,7 @@ const getEventDateTime = () => {
 }
 
 const getEventTime = () => {
-  return props.event.time || props.event.event_time || '18:00' 
+  return props.event.time || props.event.event_time || '18:00'
 }
 
 const parseDate = (dateString, timeString = '18:00') => {
@@ -96,7 +96,7 @@ const parseDate = (dateString, timeString = '18:00') => {
   const dotFormatMatch = dateString.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
   if (dotFormatMatch) {
     const day = parseInt(dotFormatMatch[1])
-    const month = parseInt(dotFormatMatch[2]) - 1 
+    const month = parseInt(dotFormatMatch[2]) - 1
     const year = parseInt(dotFormatMatch[3])
 
     let hours = 18

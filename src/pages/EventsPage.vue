@@ -9,7 +9,7 @@
             <div class="catalog-subtitle">Найдите идеальное игровое событие для себя</div>
           </div>
           <button class="btn btn-primary create-event-btn" @click="openModal">
-            <i class="fas fa-plus"></i>
+            <i class="plus"></i>
             Создать событие
           </button>
         </div>
@@ -75,7 +75,7 @@
             @click="showCreateModal = false"
             style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #666"
           >
-            <i class="fas fa-times"></i>
+            <i class="times"></i>
           </button>
         </div>
 
@@ -150,11 +150,11 @@
 
             <div class="modal-actions">
               <button type="button" class="btn btn-secondary" @click="showCreateModal = false">
-                <i class="fas fa-times"></i>
+                <i class="times"></i>
                 Отменить
               </button>
               <button type="submit" class="btn btn-primary" :disabled="isCreating">
-                <i class="fas fa-plus" v-if="!isCreating"></i>
+                <i class="plus" v-if="!isCreating"></i>
                 {{ isCreating ? 'Создание...' : 'Создать событие' }}
               </button>
             </div>
@@ -172,6 +172,8 @@ import EventsFilters from '@/components/sections/events/EventsFilters.vue'
 import EventsGrid from '@/components/sections/events/EventsGrid.vue'
 import { eventService, userService } from '@/api/userService'
 import { useRouter } from 'vue-router'
+import { userState } from '@/composables/userSession.js'
+import { initUserSession } from '@/composables/userSession.js'
 
 const router = useRouter()
 
@@ -203,6 +205,10 @@ const newEvent = ref({
 })
 
 const openModal = () => {
+  if (!userState.isAuthenticated) {
+    alert('Для создания события необходимо авторизоваться')
+    return
+  }
   showCreateModal.value = true
 }
 
@@ -300,7 +306,7 @@ const createEvent = async () => {
 
   isCreating.value = true
   try {
-    const currentUserId = 1 // TODO: Заменить на реальный ID пользователя
+    const currentUserId = userState.userId
 
     const eventData = {
       ...newEvent.value,
@@ -361,6 +367,7 @@ const resetEventForm = () => {
 }
 
 onMounted(async () => {
+  initUserSession()
   await fetchGames()
   await fetchCities()
   await fetchEvents()

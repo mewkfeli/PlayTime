@@ -4,7 +4,7 @@
     title="Создание события"
     subtitle="Заполните информацию о вашем игровом событии"
     submit-text="Создать событие"
-    submit-icon="fas fa-plus"
+    submit-icon="plus"
     :is-loading="isLoading"
     @close="$emit('close')"
     @submit="$emit('submit', formData)"

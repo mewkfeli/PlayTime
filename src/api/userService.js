@@ -43,7 +43,6 @@ export const eventService = {
   },
   async filterEvents(filters) {
     const params = new URLSearchParams()
-    // Отправляем текст как есть
     if (filters.game) {
       params.append('gameName', filters.game)
     }
@@ -59,7 +58,6 @@ export const eventService = {
     return response.data
   },
   async getGames() {
-    // Используем основной api, чтобы получить /api/Game/GetGames
     const response = await api.get('/Game/GetGames')
     return response.data
   },

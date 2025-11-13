@@ -1,6 +1,5 @@
 <template>
   <div class="filters-container">
-    <!-- Основные фильтры -->
     <div class="filter-group">
       <label class="filter-label">Город</label>
       <select class="filter-select" v-model="localFilters.city" @change="emitFilters">
@@ -39,7 +38,6 @@
     </div>
   </div>
 
-  <!-- Поиск -->
   <div class="search-container">
     <input
       type="text"

@@ -19,21 +19,11 @@ const eventApi = axios.create({
   },
 })
 
-// Логирование для отладки
-api.interceptors.request.use(
-  (config) => {
-    return config
-  },
-  (error) => Promise.reject(error),
-)
-
 api.interceptors.response.use(
   (response) => {
     return response
   },
   (error) => {
-    console.error('Ошибка API', error)
-
     if (error.response) {
       let message = 'Ошибка сервера'
 
@@ -46,11 +36,8 @@ api.interceptors.response.use(
           message = error.response.data.title
         }
       }
-
-      console.error(`Статус: ${error.response.status}, Сообщение: ${message}`)
       throw message
     } else if (error.request) {
-      console.error('Сервер не ответил')
       throw 'Сервер не отвечает. Проверьте подключение.'
     } else {
       throw 'Ошибка настройки запроса: ' + error.message

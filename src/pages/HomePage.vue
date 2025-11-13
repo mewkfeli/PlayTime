@@ -12,7 +12,7 @@
       title="Присоединиться"
       subtitle="Создайте аккаунт чтобы начать играть"
       submit-text="Создать аккаунт"
-      submit-icon="fas fa-user-plus"
+      submit-icon="user-plus"
       footer-text="Уже есть аккаунт?"
       switch-text="Войти в аккаунт"
       :is-loading="isRegisterLoading"
@@ -85,7 +85,7 @@
       title="С возвращением!"
       subtitle="Войдите в свой аккаунт"
       submit-text="Войти"
-      submit-icon="fas fa-sign-in-alt"
+      submit-icon="sign-in-alt"
       footer-text="Еще нет аккаунта?"
       switch-text="Зарегистрироваться"
       :is-loading="isLoginLoading"
@@ -153,7 +153,6 @@ const {
   switchToRegister,
 } = useModal()
 
-// Состояния загрузки
 const isRegisterLoading = ref(false)
 const isLoginLoading = ref(false)
 
@@ -182,7 +181,6 @@ const loginErrors = reactive({
   password: '',
 })
 
-// восстановление сессии при загрузке страницы
 onMounted(() => {
   initUserSession()
 })
@@ -193,7 +191,6 @@ const validateEmail = (email) => {
 }
 
 const handleRegister = async () => {
-  // Сброс ошибок
   Object.keys(registerErrors).forEach((key) => (registerErrors[key] = ''))
 
   let isValid = true

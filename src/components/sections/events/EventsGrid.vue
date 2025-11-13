@@ -7,9 +7,8 @@
       @join="joinEvent"
       @view="viewEvent"
     />
-
     <div v-if="events.length === 0" class="no-events-message">
-      <i class="fas fa-calendar-times"></i>
+      <i class="calendar-times"></i>
       <h3>События не найдены</h3>
       <p>Попробуйте изменить параметры фильтрации</p>
     </div>
