@@ -20,11 +20,6 @@ export function initUserSession() {
       userState.token = token
       userState.userRole = userData?.role || userData?.userRole || 'Пользователь'
       userState.isAuthenticated = true
-
-      console.log('User session initialized:', {
-        role: userState.userRole,
-        userData: userData,
-      })
     } catch (e) {
       console.warn('Ошибка парсинга ', e)
       clearUserData()
@@ -44,7 +39,6 @@ export function login(userData, token) {
 }
 
 export function logout() {
-  console.log('User logging out')
   clearUserData()
   localStorage.removeItem('user')
   localStorage.removeItem('token')

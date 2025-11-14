@@ -75,11 +75,20 @@ export const eventService = {
     }
   },
   async getUserEvents(userId) {
-    const response = await api.get(`/Event/GetEventByUser/${userId}`)
+    const response = await eventApi.get(`/GetEventByUser/${userId}`)
     return response.data
   },
-  async getUserEvents(userId) {
-    const response = await eventApi.get(`/Event/GetEventByUser/${userId}`)
+  async getUserCreatedEvents(userId) {
+    const response = await eventApi.get(`/GetEventsCreatedByUser/${userId}`)
     return response.data
   },
+  async cancelEvent(eventId) {
+    try {
+      const response = await eventApi.put(`/CancelEvent/${eventId}`)
+      return response.data
+    } catch (error) {
+      console.error('ОШИБКА ОТМЕНЫ СОБЫТИЯ', error)
+      throw error
+    }
+}
 }

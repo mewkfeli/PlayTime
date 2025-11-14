@@ -470,11 +470,6 @@ const resetEventForm = () => {
 
 onMounted(async () => {
   initUserSession()
-  console.log('Состояние пользователя после инициализации:', {
-    isAuthenticated: userState.isAuthenticated,
-    userId: userState.userId,
-    userName: userState.userName,
-  })
   await fetchGames()
   await fetchCities()
   await fetchEvents()
@@ -528,11 +523,7 @@ const joinEvent = async (event) => {
   } catch (error) {
     console.error('Ошибка присоединения:', error)
 
-    // Ошибка приходит как строка, а не как объект
     const errorText = String(error)
-
-    console.log('Текст ошибки от сервера:', errorText)
-
     let errorMessage = 'Ошибка при присоединении к событию'
 
     if (errorText.includes('уже записан')) {

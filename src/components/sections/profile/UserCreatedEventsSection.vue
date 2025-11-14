@@ -1,8 +1,9 @@
 <template>
-  <div class="user-events-section">
+  <div class="user-created-events-section">
     <div class="section-header">
       <h2 class="section-title">
-        Предстоящие события
+        <i class="fas fa-calendar-plus"></i>
+        Мои созданные события
       </h2>
       <div class="events-count">
         {{ events.length }} событий
@@ -11,7 +12,7 @@
 
     <div v-if="isLoading" class="loading-state">
       <i class="fas fa-spinner fa-spin"></i>
-      <p>Загрузка ваших событий...</p>
+      <p>Загрузка ваших созданных событий...</p>
     </div>
 
     <div v-else-if="error" class="error-state">
@@ -20,9 +21,13 @@
     </div>
 
     <div v-else-if="events.length === 0" class="empty-state">
-      <i class="fas fa-calendar-times"></i>
-      <h3>Вы еще не записаны ни на одно событие</h3>
-      <p>Найдите интересные события и присоединяйтесь!</p>
+      <i class="fas fa-calendar-plus"></i>
+      <h3>Вы еще не создали ни одного события</h3>
+      <p>Создайте свое первое событие и пригласите других участников!</p>
+      <router-link to="/create-event" class="btn btn-primary">
+        <i class="fas fa-plus"></i>
+        Создать событие
+      </router-link>
     </div>
 
     <div v-else class="events-grid">
@@ -30,7 +35,7 @@
         v-for="event in events" 
         :key="event.eventId" 
         class="event-card"
-        @click="viewEventDetails(event.eventId)"
+        :class="{ 'event-cancelled': event.status === 'Отменено' }"
       >
         <div class="event-header">
           <h3 class="event-title">{{ event.eventName }}</h3>
@@ -70,12 +75,45 @@
 
         <div class="event-actions">
           <button 
-            class="btn btn-outline"
-            @click.stop="leaveEvent(event.eventId)"
-            :disabled="isLeaving"
+            v-if="event.status === 'Активно'"
+            class="btn btn-cancel"
+            @click="cancelEvent(event.eventId)"
+            :disabled="isCancelling"
           >
-            <i class="fas fa-sign-out-alt"></i>
-            Покинуть событие
+            <i class="fas fa-times"></i>
+            Отменить событие
+          </button>
+          <span v-else class="cancelled-text">
+            <i class="fas fa-ban"></i>
+            Событие отменено
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showCancelModal" class="modal-overlay-two">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Отмена события</h3>
+          <button class="modal-close" @click="showCancelModal = false">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Вы уверены, что хотите отменить событие <strong>"{{ selectedEvent?.eventName }}"</strong>?</p>
+          <p class="warning-text">
+            <i class="fas fa-exclamation-triangle"></i>
+            Это действие нельзя отменить. Все участники будут уведомлены об отмене.
+          </p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" @click="showCancelModal = false">
+            <i class="fas fa-arrow-left"></i>
+            Вернуться
+          </button>
+          <button class="btn btn-danger" @click="confirmCancel" :disabled="isCancelling">
+            <i class="fas fa-times"></i>
+            {{ isCancelling ? 'Отмена...' : 'Да, отменить событие' }}
           </button>
         </div>
       </div>
@@ -85,17 +123,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { userState } from '@/composables/userSession'
-import { eventApi } from '@/api/axios'
+import { eventService } from '@/api/userService'
 
 const events = ref([])
 const isLoading = ref(false)
 const error = ref('')
-const isLeaving = ref(false)
-const router = useRouter()
+const isCancelling = ref(false)
+const showCancelModal = ref(false)
+const selectedEvent = ref(null)
 
-const loadUserEvents = async () => {
+const loadCreatedEvents = async () => {
   if (!userState.isAuthenticated || !userState.userId) {
     error.value = 'Пользователь не авторизован'
     return
@@ -105,52 +143,49 @@ const loadUserEvents = async () => {
   error.value = ''
 
   try {
-    const response = await eventApi.get(`/GetEventByUser/${userState.userId}`)
-    
-    events.value = Array.isArray(response.data) ? response.data : []
-    
+    const response = await eventService.getUserCreatedEvents(userState.userId)
+    events.value = Array.isArray(response) ? response : []
   } catch (err) {
-    console.error('Ошибка загрузки событий пользователя:', err)
-    
-    if (err.response?.status === 404) {
-      events.value = []
-      error.value = ''
-    } else if (err.response?.data) {
-      error.value = typeof err === 'string' ? err : 'Не удалось загрузить ваши события'
-    } else {
-      error.value = 'Не удалось загрузить ваши события. Проверьте подключение к интернету.'
-    }
+    console.error('Ошибка загрузки созданных событий:', err)
+    error.value = typeof err === 'string' ? err : 'Не удалось загрузить ваши созданные события'
   } finally {
     isLoading.value = false
   }
 }
 
-const leaveEvent = async (eventId) => {
-  if (!confirm('Вы уверены, что хотите покинуть это событие?')) {
-    return
-  }
-
-  isLeaving.value = true
-
-  try {
-    await eventApi.delete(`/RemoveParticipant?eventId=${eventId}&userId=${userState.userId}`)
-
-    events.value = events.value.filter(event => event.eventId !== eventId)
-    
-    alert('Вы успешно покинули событие')
-    
-  } catch (err) {
-    console.error('Ошибка при выходе из события:', err)
-    
-    const errorMessage = typeof err === 'string' ? err : 'Не удалось покинуть событие. Попробуйте позже.'
-    alert(errorMessage)
-  } finally {
-    isLeaving.value = false
-  }
+const cancelEvent = (eventId) => {
+  console.log('Отмена события:', eventId)
+  selectedEvent.value = events.value.find(event => event.eventId === eventId)
+  showCancelModal.value = true
 }
 
-const viewEventDetails = (eventId) => {
-  router.push(`/events/${eventId}`)
+const confirmCancel = async () => {
+  if (!selectedEvent.value) return
+
+  isCancelling.value = true
+
+  try {
+    console.log('Подтверждение отмены события:', selectedEvent.value.eventId)
+    
+    await eventService.cancelEvent(selectedEvent.value.eventId)
+
+    const eventIndex = events.value.findIndex(event => event.eventId === selectedEvent.value.eventId)
+    if (eventIndex !== -1) {
+      events.value[eventIndex].status = 'Отменено'
+    }
+
+    showCancelModal.value = false
+    selectedEvent.value = null
+    
+    alert('Событие успешно отменено')
+    
+  } catch (err) {
+    console.error('Ошибка при отмене события:', err)
+    const errorMessage = typeof err === 'string' ? err : 'Не удалось отменить событие'
+    alert(errorMessage)
+  } finally {
+    isCancelling.value = false
+  }
 }
 
 const formatDateTime = (dateTimeString) => {
@@ -168,6 +203,7 @@ const formatDateTime = (dateTimeString) => {
   }
 }
 
+// Получение класса для статуса
 const getStatusClass = (status) => {
   switch (status?.toLowerCase()) {
     case 'активно':
@@ -182,12 +218,12 @@ const getStatusClass = (status) => {
 }
 
 onMounted(() => {
-  loadUserEvents()
+  loadCreatedEvents()
 })
 </script>
 
 <style scoped>
-.user-events-section {
+.user-created-events-section {
   background: white;
   border-radius: 12px;
   padding: 2rem;
@@ -273,10 +309,20 @@ onMounted(() => {
   border: 1px solid #e9ecef;
   border-radius: 12px;
   padding: 1.5rem;
-  cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
+}
+
+.event-card:not(.event-cancelled):hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary);
+}
+
+.event-cancelled {
+  opacity: 0.7;
+  background-color: #f8f9fa;
 }
 
 .event-header {
@@ -381,35 +427,134 @@ onMounted(() => {
   justify-content: center;
 }
 
-.btn-outline {
+.btn-cancel {
   background: transparent;
   color: #dc3545;
   border: 2px solid #dc3545;
   width: 100%;
 }
 
-.btn-outline:hover:not(:disabled) {
+.btn-cancel:hover:not(:disabled) {
   background: #dc3545;
   color: white;
 }
 
-.btn-outline:disabled {
+.btn-cancel:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-primary {
-  background: var(--primary);
+.btn-danger {
+  background: #dc3545;
   color: white;
   border: none;
 }
 
-.btn-primary:hover {
-  background: var(--primary-dark);
+.btn-danger:hover:not(:disabled) {
+  background: #c82333;
 }
 
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+}
+
+.cancelled-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6c757d;
+  font-style: italic;
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+/* Модальное окно */
+.modal-overlay-two {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: var(--dark);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0.5rem;
+}
+
+.modal-close:hover {
+  color: var(--dark);
+}
+
+.modal-body {
+  margin-bottom: 2rem;
+}
+
+.modal-body p {
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.warning-text {
+  color: #856404;
+  background: #fff3cd;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ffeaa7;
+}
+
+.warning-text i {
+  margin-right: 0.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+/* Адаптивность */
 @media (max-width: 768px) {
-  .user-events-section {
+  .user-created-events-section {
     padding: 1.5rem;
     margin: 1rem 0;
   }
@@ -431,6 +576,14 @@ onMounted(() => {
 
   .event-title {
     margin-right: 0;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-content {
+    padding: 1.5rem;
   }
 }
 </style>

@@ -29,6 +29,7 @@
             </button>
           </div>
         </div>
+        <UserCreatedEventsSection />
         <UserEventsSection />
         <div class="logout-section">
           <button class="btn btn-logout" @click="handleLogout">
@@ -49,6 +50,7 @@ import { userService } from '@/api/userService'
 import { userState, initUserSession, logout } from '@/composables/userSession'
 import { useRouter } from 'vue-router'
 import UserEventsSection from '@/components/sections/profile/UserEventsSection.vue'
+import UserCreatedEventsSection from '@/components/sections/profile/UserCreatedEventsSection.vue'
 
 const userData = ref({})
 const editData = ref({})

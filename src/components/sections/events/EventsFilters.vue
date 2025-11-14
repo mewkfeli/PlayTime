@@ -134,7 +134,6 @@ const getSelectedGameLabel = computed(() => {
 })
 
 const toggleDropdown = (type) => {
-  // Закрываем другие dropdown
   Object.keys(dropdowns.value).forEach(key => {
     if (key !== type) dropdowns.value[key] = false
   })
@@ -277,24 +276,6 @@ watch(
 
 .arrow.rotated {
   transform: rotate(180deg);
-}
-
-.dropdown-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.dropdown-list::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 3px;
-}
-
-.dropdown-list::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.dropdown-list::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }
 
 .date-input-container {

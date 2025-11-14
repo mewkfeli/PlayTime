@@ -20,7 +20,6 @@
       </div>
     </div>
 
-    <!-- Состояния загрузки и ошибок -->
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
       <p>Загрузка событий...</p>

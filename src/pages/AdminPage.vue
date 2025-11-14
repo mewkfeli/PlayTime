@@ -5,13 +5,8 @@
       <AdminSidebar :active-tab="activeTab" @tab-change="handleTabChange" />
 
       <div class="admin-content">
-        <!-- Управление играми -->
         <GamesManagement v-if="activeTab === 'games'" />
-
-        <!-- Модерация событий -->
         <EventsModeration v-if="activeTab === 'events'" />
-
-        <!-- Управление пользователями -->
         <UsersManagement v-if="activeTab === 'users'" />
       </div>
     </div>
