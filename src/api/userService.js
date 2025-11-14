@@ -74,4 +74,12 @@ export const eventService = {
       throw error
     }
   },
+  async getUserEvents(userId) {
+    const response = await api.get(`/Event/GetEventByUser/${userId}`)
+    return response.data
+  },
+  async getUserEvents(userId) {
+    const response = await eventApi.get(`/Event/GetEventByUser/${userId}`)
+    return response.data
+  },
 }

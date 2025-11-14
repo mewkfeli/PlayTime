@@ -29,8 +29,7 @@
             </button>
           </div>
         </div>
-
-        <!-- Кнопка выхода -->
+        <UserEventsSection />
         <div class="logout-section">
           <button class="btn btn-logout" @click="handleLogout">
             <i class="fas fa-sign-out-alt"></i>
@@ -49,6 +48,7 @@ import PersonalInfoSection from '@/components/sections/profile/PersonalInfoSecti
 import { userService } from '@/api/userService'
 import { userState, initUserSession, logout } from '@/composables/userSession'
 import { useRouter } from 'vue-router'
+import UserEventsSection from '@/components/sections/profile/UserEventsSection.vue'
 
 const userData = ref({})
 const editData = ref({})
@@ -201,11 +201,10 @@ const handleLogout = async () => {
   if (confirm('Вы уверены, что хотите выйти?')) {
     try {
       await userService.logout()
-      logout() // Вызываем функцию logout из userSession
+      logout() 
       router.push('/')
     } catch (error) {
       console.error('Ошибка при выходе:', error)
-      // Все равно выполняем выход на клиенте
       logout()
       router.push('/')
     }
