@@ -337,26 +337,6 @@ const fetchEvents = async () => {
     loading.value = false
   }
 }
-
-const updateEventAfterJoin = (eventId) => {
-  console.log('Обновляем состояние события локально:', eventId)
-
-  const eventIndex = events.value.findIndex((event) => event.id === eventId)
-  if (eventIndex === -1) {
-    console.log('Событие не найдено в списке')
-    return
-  }
-
-  events.value[eventIndex] = {
-    ...events.value[eventIndex],
-    isJoined: true,
-    participants: events.value[eventIndex].participants + 1,
-    isFull: events.value[eventIndex].participants + 1 >= events.value[eventIndex].maxParticipants,
-  }
-
-  console.log('Событие обновлено локально:', events.value[eventIndex])
-}
-
 const hasActiveFilters = () => {
   return (
     filters.value.city ||
@@ -490,7 +470,11 @@ const resetEventForm = () => {
 
 onMounted(async () => {
   initUserSession()
-  console.log('Авторизованный пользователь:', userState.userId)
+  console.log('Состояние пользователя после инициализации:', {
+    isAuthenticated: userState.isAuthenticated,
+    userId: userState.userId,
+    userName: userState.userName,
+  })
   await fetchGames()
   await fetchCities()
   await fetchEvents()
@@ -514,9 +498,59 @@ const viewEvent = (event) => {
 
 const joinEvent = async (event) => {
   try {
-    updateEventAfterJoin(event.id)
-  } catch (e) {
-    console.error('Ошибка при обновлении события:', e)
+    if (!userState.isAuthenticated) {
+      alert('Для присоединения к событию необходимо авторизоваться')
+      return
+    }
+
+    const userId = userState.userId
+    if (!userId) {
+      alert('Ошибка авторизации. Пожалуйста, войдите заново.')
+      return
+    }
+
+    if (event.isJoined) {
+      alert('Вы уже присоединились к этому событию')
+      return
+    }
+
+    if (event.isFull) {
+      alert('Это событие уже заполнено')
+      return
+    }
+
+    const confirmed = confirm(`Вы действительно хотите присоединиться к событию "${event.title}"?`)
+    if (!confirmed) return
+
+    await eventService.joinEvent(event.id, userId)
+    alert('Вы успешно присоединились к событию!')
+    await fetchEvents()
+  } catch (error) {
+    console.error('Ошибка присоединения:', error)
+
+    // Ошибка приходит как строка, а не как объект
+    const errorText = String(error)
+
+    console.log('Текст ошибки от сервера:', errorText)
+
+    let errorMessage = 'Ошибка при присоединении к событию'
+
+    if (errorText.includes('уже записан')) {
+      errorMessage = 'Вы уже записаны на это событие'
+    } else if (errorText.includes('максимальное количество')) {
+      errorMessage = 'На это событие нет свободных мест'
+    } else if (errorText.includes('не найдено')) {
+      errorMessage = 'Событие не найдено'
+    } else if (errorText.includes('неактивное')) {
+      errorMessage = 'Нельзя записаться на неактивное событие'
+    } else if (errorText.includes('Пользователь не найден')) {
+      errorMessage = 'Ошибка авторизации. Пожалуйста, войдите заново.'
+    } else {
+      errorMessage = errorText
+    }
+
+    alert(errorMessage)
+    await fetchEvents()
   }
 }
 </script>

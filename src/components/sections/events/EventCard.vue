@@ -5,9 +5,6 @@
         <h3 class="event-card-title">{{ event.title || event.event_name }}</h3>
         <div class="event-card-game">{{ event.game || event.game_name || event.game_id }}</div>
       </div>
-      <div class="event-card-date">
-        <i class="calendar-alt"></i> {{ formatDate(getEventDateTime()) }}
-      </div>
     </div>
 
     <div class="players-preview">
@@ -117,19 +114,6 @@ const parseDate = (dateString, timeString = '18:00') => {
   }
 }
 
-const formatDate = (dateString) => {
-  if (!dateString) return 'Дата не указана'
-
-  const date = parseDate(dateString)
-  if (!date) return `Неверный формат: ${dateString}`
-
-  return date.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-}
-
 const formatDateTime = (dateString, timeString = '18:00') => {
   if (!dateString) return 'Дата и время не указаны'
 
@@ -145,3 +129,8 @@ const formatDateTime = (dateString, timeString = '18:00') => {
   })
 }
 </script>
+<style>
+.event-card-game {
+  margin: 10px 0px 10px 0px;
+}
+</style>

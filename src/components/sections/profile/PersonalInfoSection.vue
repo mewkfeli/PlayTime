@@ -94,6 +94,9 @@
           <div class="field-content">
             <div class="field-value" v-if="!isEditing">
               {{ getCityName(userData.cityId) || 'Не указано' }}
+              <small v-if="userData.cityId && !getCityName(userData.cityId)" style="color: orange;">
+                (ID: {{ userData.cityId }})
+              </small>
             </div>
             <select
               v-else
@@ -103,8 +106,12 @@
               @change="emitUpdate"
             >
               <option :value="null">Выберите город</option>
-              <option v-for="city in cities" :key="city.cityId" :value="city.cityId">
-                {{ city.name }}
+              <option
+                v-for="(city, index) in cities"
+                :key="city.cityId || index"
+                :value="city.cityId"
+              >
+                {{ city.cityName }}
               </option>
             </select>
             <div v-if="isEditing && hasError('город')" class="field-error">
@@ -255,6 +262,7 @@
     </div>
   </div>
 </template>
+
 <script>
 export default {
   name: 'CompactPersonalInfo',
@@ -320,43 +328,126 @@ export default {
     },
   },
   methods: {
-    hasError(fieldName) {
-      return this.validationErrors.some((error) =>
-        error.toLowerCase().includes(fieldName.toLowerCase()),
-      )
-    },
-    getErrorText(fieldName) {
-      const error = this.validationErrors.find((error) =>
-        error.toLowerCase().includes(fieldName.toLowerCase()),
-      )
-      return error || ''
-    },
-    emitUpdate() {
-      this.$emit('update:editData', { ...this.localEditData })
-    },
+  validateForm() {
+    const errors = []
 
-    formatDate(dateString) {
-      if (!dateString) return ''
-      try {
-        const date = new Date(dateString)
-        return date.toLocaleDateString('ru-RU')
-      } catch (error) {
-        console.error('Ошибка форматирования даты:', error)
-        return dateString
+    // Проверка обязательных полей
+    if (!this.localEditData.name?.trim()) {
+      errors.push('Имя является обязательным полем')
+    } else if (this.localEditData.name.trim().length < 2) {
+      errors.push('Имя должно содержать минимум 2 символа')
+    } else if (this.localEditData.name.trim().length > 50) {
+      errors.push('Имя не должно превышать 50 символов')
+    }
+
+    if (!this.localEditData.email?.trim()) {
+      errors.push('Email является обязательным полем')
+    } else if (!this.isValidEmail(this.localEditData.email)) {
+      errors.push('Введите корректный email')
+    }
+
+    if (!this.localEditData.birthDate) {
+      errors.push('Дата рождения является обязательным полем')
+    } else {
+      const birthDate = new Date(this.localEditData.birthDate)
+      const today = new Date()
+      const minDate = new Date()
+      minDate.setFullYear(today.getFullYear() - 100)
+      const maxDate = new Date()
+      maxDate.setFullYear(today.getFullYear() - 10)
+
+      if (birthDate > today) {
+        errors.push('Дата рождения не может быть в будущем')
+      } else if (birthDate < minDate) {
+        errors.push('Дата рождения не может быть более 100 лет назад')
+      } else if (birthDate > maxDate) {
+        errors.push('Возраст должен быть не менее 10 лет')
       }
-    },
+    }
 
-    getCityName(cityId) {
-      if (!cityId || !this.cities.length) return ''
-      const city = this.cities.find((c) => c.cityId === cityId)
-      return city ? city.name : ''
-    },
+    if (!this.localEditData.cityId) {
+      errors.push('Город является обязательным полем')
+    }
+
+    if (!this.localEditData.contactInfo?.trim()) {
+      errors.push('Контактная информация является обязательным полем')
+    } else if (this.localEditData.contactInfo.trim().length < 5) {
+      errors.push('Контактная информация должна содержать минимум 5 символов')
+    }
+
+    // Валидация пароля, если меняется
+    if (this.localEditData.newPassword || this.localEditData.confirmNewPassword) {
+      if (!this.localEditData.currentPassword) {
+        errors.push('Для смены пароля необходимо указать текущий пароль')
+      }
+
+      if (this.localEditData.newPassword !== this.localEditData.confirmNewPassword) {
+        errors.push('Новый пароль и подтверждение не совпадают')
+      }
+
+      if (this.localEditData.newPassword && this.localEditData.newPassword.length < 6) {
+        errors.push('Новый пароль должен содержать минимум 6 символов')
+      }
+    }
+
+    return errors
   },
+
+  isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  },
+
+  hasError(fieldName) {
+    return this.validationErrors.some((error) =>
+      error.toLowerCase().includes(fieldName.toLowerCase()),
+    )
+  },
+
+  getErrorText(fieldName) {
+    const error = this.validationErrors.find((error) =>
+      error.toLowerCase().includes(fieldName.toLowerCase()),
+    )
+    return error || ''
+  },
+
+  emitUpdate() {
+    this.$emit('update:editData', { ...this.localEditData })
+  },
+
+  formatDate(dateString) {
+    if (!dateString) return ''
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('ru-RU')
+    } catch {
+      return dateString
+    }
+  },
+
+  getCityName(cityId) {
+    if (!cityId) return ''
+
+    try {
+      for (let i = 0; i < this.cities.length; i++) {
+        const city = this.cities[i]
+        if (city.cityId === cityId) {
+          return city.cityName
+        }
+      }
+      return ''
+    } catch {
+      return ''
+    }
+  }
+
+  }
 }
 </script>
 
 <style scoped>
 .compact-personal-info {
+  width: 1000px;
   margin: 1.5rem 0;
   padding: 0;
 }
@@ -597,20 +688,6 @@ select.compact-input {
 
 .validation-item i {
   width: 16px;
-}
-.required-star {
-  color: #e53e3e;
-  margin-left: 0.25rem;
-}
-
-.input-error {
-  border-color: #e53e3e !important;
-  background-color: #fff5f5 !important;
-}
-
-.compact-input.input-error:focus {
-  border-color: #e53e3e !important;
-  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1) !important;
 }
 
 .required-star {

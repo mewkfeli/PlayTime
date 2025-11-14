@@ -8,6 +8,7 @@
           :user-data="userData"
           :edit-data="editData"
           :is-editing="isEditing"
+          :cities="cities"
           :validation-errors="validationErrors"
           @update:edit-data="updateEditData"
         />
@@ -47,22 +48,35 @@ const isEditing = ref(false)
 const validationErrors = ref([])
 const personalInfoRef = ref(null)
 const router = useRouter()
+const cities = ref([])
+
+const loadCities = async () => {
+  try {
+    cities.value = await userService.getCities()
+  } catch (error) {
+    console.error(' Ошибка загрузки городов:', error)
+  }
+}
 
 const isAuthenticated = computed(() => userState.isAuthenticated)
 
 const loadUserProfile = async () => {
-  if (!isAuthenticated.value) return
+  if (!isAuthenticated.value) {
+    return
+  }
 
   const userId = userState.userId || userState.user?.userId || userState.user?.id
+
   if (userId) {
     try {
       userData.value = await userService.getProfileById(userId)
       editData.value = { ...userData.value }
-    } catch (error) {
-      console.error('Ошибка загрузки профиля:', error)
+    } catch {
       userData.value = {}
       editData.value = {}
     }
+  } else {
+    console.log('userId не найден')
   }
 }
 
@@ -80,63 +94,98 @@ const saveProfile = async () => {
   try {
     validationErrors.value = []
 
-    if (personalInfoRef.value && !personalInfoRef.value.validateForm()) {
-      validationErrors.value.push('Пожалуйста, заполните все обязательные поля правильно')
+    if (!personalInfoRef.value) {
+      alert('Ошибка компонента формы')
+      return
+    }
+
+    if (typeof personalInfoRef.value.validateForm !== 'function') {
+      alert('Ошибка валидации формы')
+      return
+    }
+
+    const validationErrorsArray = personalInfoRef.value.validateForm()
+
+    if (validationErrorsArray && validationErrorsArray.length > 0) {
+      const errorMessage = validationErrorsArray.join('\n• ')
+      alert('Обнаружены ошибки:\n• ' + errorMessage)
+      validationErrors.value = validationErrorsArray
       return
     }
 
     const userId = userState.userId
-    if (userId) {
-      const dataToSend = {
-        name: editData.value.name?.trim(),
-        email: editData.value.email?.trim(),
-        birthDate: editData.value.birthDate,
-        cityId: editData.value.cityId,
-        contactInfo: editData.value.contactInfo?.trim(),
-        description: editData.value.description?.trim(),
-      }
 
-      const hasNewPassword = editData.value.newPassword?.trim()
-      if (hasNewPassword) {
-        dataToSend.currentPassword = editData.value.currentPassword
-        dataToSend.newPassword = editData.value.newPassword
-      }
-
-      console.log('Отправляемые данные:', dataToSend)
-
-      await userService.updateProfile(userId, dataToSend)
-      await loadUserProfile()
-      isEditing.value = false
-
-      editData.value.currentPassword = ''
-      editData.value.newPassword = ''
-      editData.value.confirmNewPassword = ''
-
-      alert('Профиль успешно обновлен!')
+    if (!userId) {
+      alert('Пользователь не идентифицирован')
+      return
     }
+
+    const dataToSend = {
+      name: editData.value.name?.trim() || '',
+      email: editData.value.email?.trim() || '',
+      birthDate: editData.value.birthDate || '',
+      cityId: editData.value.cityId || null,
+      contactInfo: editData.value.contactInfo?.trim() || '',
+      description: editData.value.description?.trim() || '',
+    }
+
+    const hasNewPassword = editData.value.newPassword?.trim()
+    if (hasNewPassword) {
+      dataToSend.currentPassword = editData.value.currentPassword
+      dataToSend.newPassword = editData.value.newPassword
+    }
+
+    await userService.updateProfile(userId, dataToSend)
+
+    await loadUserProfile()
+    isEditing.value = false
+
+    editData.value.currentPassword = ''
+    editData.value.newPassword = ''
+    editData.value.confirmNewPassword = ''
+
+    alert('Профиль успешно обновлен!')
+
   } catch (error) {
     console.error('Ошибка сохранения профиля:', error)
+    handleSaveError(error)
+  }
+}
 
-    if (error.response && error.response.data) {
-      const errorData = error.response.data
+const handleSaveError = (error) => {
+  let errorMessage = 'Ошибка при сохранении профиля'
 
-      if (
-        errorData.message &&
-        (errorData.message.includes('пароль') ||
-          errorData.message.includes('password') ||
-          errorData.message.includes('текущий'))
-      ) {
-        validationErrors.value.push('Неверный текущий пароль')
-      } else if (errorData.message) {
-        validationErrors.value.push(errorData.message)
-      } else {
-        validationErrors.value.push('Ошибка при сохранении профиля')
+  if (error.response?.data) {
+    const errorData = error.response.data
+
+    if (errorData.errors) {
+      const errorMessages = []
+      for (const key in errorData.errors) {
+        const fieldErrors = errorData.errors[key]
+        errorMessages.push(...fieldErrors)
+        validationErrors.value.push(...fieldErrors)
       }
-    } else if (error.message) {
-      validationErrors.value.push(error.message)
+
+      if (errorMessages.length > 0) {
+        errorMessage = errorMessages.join('\n• ')
+        alert('Ошибки валидации:\n• ' + errorMessage)
+      }
+
+    } else if (errorData.message) {
+      errorMessage = errorData.message
+      validationErrors.value.push(errorData.message)
+      alert(errorMessage)
     } else {
       validationErrors.value.push('Ошибка при сохранении профиля')
+      alert('Ошибка при сохранении профиля')
     }
+  } else if (error.request) {
+    errorMessage = 'Yе удалось подключиться к серверу'
+    validationErrors.value.push(errorMessage)
+    alert(errorMessage)
+  } else {
+    validationErrors.value.push(errorMessage)
+    alert(errorMessage)
   }
 }
 
@@ -152,8 +201,7 @@ onMounted(async () => {
     router.push('/')
     return
   }
-
-  await loadUserProfile()
+  await Promise.all([loadUserProfile(), loadCities()])
 })
 </script>
 
