@@ -26,7 +26,6 @@
       </button>
     </div>
 
-    <!-- Валидационные сообщения -->
     <div v-if="isEditing && validationErrors.length" class="validation-errors">
       <div class="error-message">
         <i class="fas fa-exclamation-triangle"></i>
@@ -343,14 +342,12 @@ export default {
 
         if (error.response?.data) {
           const errorData = error.response.data
-          console.error('📋 Детали ошибки сервера:', errorData)
 
           if (errorData.errors) {
             const validationErrors = Object.entries(errorData.errors).map(
               ([field, messages]) => `${field}: ${messages.join(', ')}`,
             )
             errorMessage = `Ошибки валидации:\n${validationErrors.join('\n')}`
-            console.error('🚨 Ошибки валидации по полям:', validationErrors)
           } else if (typeof errorData === 'string') {
             errorMessage = errorData
           } else if (errorData.message) {

@@ -653,7 +653,6 @@ body.modal-open {
   display: flex;
   justify-content: center;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
 }
 
 .info-grid {
@@ -1226,20 +1225,6 @@ body.modal-open {
   margin: 0;
   font-size: 14px;
   color: #666;
-}
-
-select {
-  z-index: 10000 !important;
-  position: relative;
-}
-
-select:focus {
-  z-index: 10000 !important;
-}
-
-select option {
-  z-index: 10002 !important;
-  position: relative;
 }
 
 @media (max-width: 1600px) {

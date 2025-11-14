@@ -1,14 +1,11 @@
 <template>
   <div class="compact-personal-info">
-    <!-- Заголовок секции -->
     <div class="section-header">
       <h2 class="section-title">Личная информация</h2>
       <p class="section-subtitle">Основные данные профиля</p>
     </div>
 
-    <!-- Компактная сетка -->
     <div class="compact-info-grid">
-      <!-- Первая строка: Имя и Email -->
       <div class="compact-row">
         <div class="compact-field">
           <div class="field-header">
@@ -59,7 +56,6 @@
         </div>
       </div>
 
-      <!-- Вторая строка: Дата рождения и Город -->
       <div class="compact-row">
         <div class="compact-field">
           <div class="field-header">
@@ -86,40 +82,70 @@
         </div>
 
         <div class="compact-field">
-          <div class="field-header">
-            <i class="fas fa-map-marker-alt field-icon"></i>
-            <span class="field-label">Город</span>
-            <span class="required-star">*</span>
+        <div class="field-header">
+          <i class="fas fa-map-marker-alt field-icon"></i>
+          <span class="field-label">Город</span>
+          <span class="required-star">*</span>
+        </div>
+        <div class="field-content">
+          <div class="field-value" v-if="!isEditing">
+            {{ getCityName(userData.cityId) || 'Не указано' }}
+            <small v-if="userData.cityId && !getCityName(userData.cityId)" style="color: orange;">
+              (ID: {{ userData.cityId }})
+            </small>
           </div>
-          <div class="field-content">
-            <div class="field-value" v-if="!isEditing">
-              {{ getCityName(userData.cityId) || 'Не указано' }}
-              <small v-if="userData.cityId && !getCityName(userData.cityId)" style="color: orange;">
-                (ID: {{ userData.cityId }})
-              </small>
-            </div>
-            <select
-              v-else
-              class="compact-input"
-              :class="{ 'input-error': hasError('город') }"
-              v-model="localEditData.cityId"
-              @change="emitUpdate"
+          
+          <div v-else class="custom-select-wrapper">
+            <div 
+              class="custom-select-header"
+              :class="{ 'input-error': hasError('город'), 'open': isCityDropdownOpen }"
+              @click="toggleCityDropdown"
             >
-              <option :value="null">Выберите город</option>
-              <option
-                v-for="(city, index) in cities"
-                :key="city.cityId || index"
-                :value="city.cityId"
-              >
-                {{ city.cityName }}
-              </option>
-            </select>
+              <span class="selected-value">
+                {{ getSelectedCityName || 'Выберите город' }}
+              </span>
+              <span class="custom-arrow" :class="{ 'rotated': isCityDropdownOpen }">▼</span>
+            </div>
+            
+            <div v-if="isCityDropdownOpen" class="custom-select-dropdown">
+              <div class="dropdown-search" v-if="cities.length > 5">
+                <input
+                  type="text"
+                  v-model="citySearch"
+                  placeholder="Поиск города..."
+                  class="search-input"
+                  @click.stop
+                />
+              </div>
+              <div class="dropdown-list">
+                <div 
+                  class="dropdown-item"
+                  :class="{ 'selected': !localEditData.cityId }"
+                  @click="selectCity(null)"
+                >
+                  Выберите город
+                </div>
+                <div 
+                  v-for="city in filteredCities" 
+                  :key="city.cityId"
+                  class="dropdown-item"
+                  :class="{ 'selected': localEditData.cityId === city.cityId }"
+                  @click="selectCity(city.cityId)"
+                >
+                  {{ city.cityName }}
+                </div>
+                <div v-if="filteredCities.length === 0" class="no-results">
+                  Городы не найдены
+                </div>
+              </div>
+            </div>
             <div v-if="isEditing && hasError('город')" class="field-error">
               {{ getErrorText('город') }}
             </div>
           </div>
         </div>
       </div>
+    </div>
 
       <div class="compact-row">
         <div class="compact-field full-width">
@@ -149,7 +175,6 @@
       </div>
     </div>
 
-    <!-- Компактная секция "О себе" -->
     <div class="compact-about-section">
       <div class="section-header">
         <h2 class="section-title">О себе</h2>
@@ -177,7 +202,6 @@
       </div>
     </div>
 
-    <!-- Секция смены пароля -->
     <div class="compact-password-section" v-if="isEditing">
       <div class="section-header">
         <h2 class="section-title">Смена пароля</h2>
@@ -240,7 +264,6 @@
           </div>
         </div>
 
-        <!-- Валидация пароля -->
         <div class="password-validation" v-if="showPasswordValidation">
           <div class="validation-item" :class="{ valid: isPasswordMatch }">
             <i class="fas" :class="isPasswordMatch ? 'fa-check' : 'fa-times'"></i>
@@ -252,12 +275,7 @@
           </div>
         </div>
 
-        <!-- Общие ошибки пароля -->
-        <div v-if="isEditing && hasPasswordErrors" class="password-errors">
-          <div class="field-error" v-for="error in passwordErrors" :key="error">
-            {{ error }}
-          </div>
-        </div>
+        
       </div>
     </div>
   </div>
@@ -288,6 +306,8 @@ export default {
   data() {
     return {
       localEditData: { ...this.editData },
+      isCityDropdownOpen: false,
+      citySearch: ''
     }
   },
   computed: {
@@ -317,6 +337,17 @@ export default {
           error.toLowerCase().includes('подтверждение'),
       )
     },
+    getSelectedCityName() {
+      if (!this.localEditData.cityId) return ''
+      const city = this.cities.find(c => c.cityId === this.localEditData.cityId)
+      return city ? city.cityName : ''
+    },
+    filteredCities() {
+      if (!this.citySearch) return this.cities
+      return this.cities.filter(city =>
+        city.cityName.toLowerCase().includes(this.citySearch.toLowerCase())
+      )
+    }
   },
   watch: {
     editData: {
@@ -328,119 +359,142 @@ export default {
     },
   },
   methods: {
-  validateForm() {
-    const errors = []
+    validateForm() {
+      const errors = []
 
-    // Проверка обязательных полей
-    if (!this.localEditData.name?.trim()) {
-      errors.push('Имя является обязательным полем')
-    } else if (this.localEditData.name.trim().length < 2) {
-      errors.push('Имя должно содержать минимум 2 символа')
-    } else if (this.localEditData.name.trim().length > 50) {
-      errors.push('Имя не должно превышать 50 символов')
-    }
-
-    if (!this.localEditData.email?.trim()) {
-      errors.push('Email является обязательным полем')
-    } else if (!this.isValidEmail(this.localEditData.email)) {
-      errors.push('Введите корректный email')
-    }
-
-    if (!this.localEditData.birthDate) {
-      errors.push('Дата рождения является обязательным полем')
-    } else {
-      const birthDate = new Date(this.localEditData.birthDate)
-      const today = new Date()
-      const minDate = new Date()
-      minDate.setFullYear(today.getFullYear() - 100)
-      const maxDate = new Date()
-      maxDate.setFullYear(today.getFullYear() - 10)
-
-      if (birthDate > today) {
-        errors.push('Дата рождения не может быть в будущем')
-      } else if (birthDate < minDate) {
-        errors.push('Дата рождения не может быть более 100 лет назад')
-      } else if (birthDate > maxDate) {
-        errors.push('Возраст должен быть не менее 10 лет')
-      }
-    }
-
-    if (!this.localEditData.cityId) {
-      errors.push('Город является обязательным полем')
-    }
-
-    if (!this.localEditData.contactInfo?.trim()) {
-      errors.push('Контактная информация является обязательным полем')
-    } else if (this.localEditData.contactInfo.trim().length < 5) {
-      errors.push('Контактная информация должна содержать минимум 5 символов')
-    }
-
-    // Валидация пароля, если меняется
-    if (this.localEditData.newPassword || this.localEditData.confirmNewPassword) {
-      if (!this.localEditData.currentPassword) {
-        errors.push('Для смены пароля необходимо указать текущий пароль')
+      if (!this.localEditData.name?.trim()) {
+        errors.push('Имя является обязательным полем')
+      } else if (this.localEditData.name.trim().length < 2) {
+        errors.push('Имя должно содержать минимум 2 символа')
+      } else if (this.localEditData.name.trim().length > 50) {
+        errors.push('Имя не должно превышать 50 символов')
       }
 
-      if (this.localEditData.newPassword !== this.localEditData.confirmNewPassword) {
-        errors.push('Новый пароль и подтверждение не совпадают')
+      if (!this.localEditData.email?.trim()) {
+        errors.push('Email является обязательным полем')
+      } else if (!this.isValidEmail(this.localEditData.email)) {
+        errors.push('Введите корректный email')
       }
 
-      if (this.localEditData.newPassword && this.localEditData.newPassword.length < 6) {
-        errors.push('Новый пароль должен содержать минимум 6 символов')
-      }
-    }
+      if (!this.localEditData.birthDate) {
+        errors.push('Дата рождения является обязательным полем')
+      } else {
+        const birthDate = new Date(this.localEditData.birthDate)
+        const today = new Date()
+        const minDate = new Date()
+        minDate.setFullYear(today.getFullYear() - 100)
+        const maxDate = new Date()
+        maxDate.setFullYear(today.getFullYear() - 10)
 
-    return errors
-  },
-
-  isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  },
-
-  hasError(fieldName) {
-    return this.validationErrors.some((error) =>
-      error.toLowerCase().includes(fieldName.toLowerCase()),
-    )
-  },
-
-  getErrorText(fieldName) {
-    const error = this.validationErrors.find((error) =>
-      error.toLowerCase().includes(fieldName.toLowerCase()),
-    )
-    return error || ''
-  },
-
-  emitUpdate() {
-    this.$emit('update:editData', { ...this.localEditData })
-  },
-
-  formatDate(dateString) {
-    if (!dateString) return ''
-    try {
-      const date = new Date(dateString)
-      return date.toLocaleDateString('ru-RU')
-    } catch {
-      return dateString
-    }
-  },
-
-  getCityName(cityId) {
-    if (!cityId) return ''
-
-    try {
-      for (let i = 0; i < this.cities.length; i++) {
-        const city = this.cities[i]
-        if (city.cityId === cityId) {
-          return city.cityName
+        if (birthDate > today) {
+          errors.push('Дата рождения не может быть в будущем')
+        } else if (birthDate < minDate) {
+          errors.push('Дата рождения не может быть более 100 лет назад')
+        } else if (birthDate > maxDate) {
+          errors.push('Возраст должен быть не менее 10 лет')
         }
       }
-      return ''
-    } catch {
-      return ''
-    }
-  }
 
+      if (!this.localEditData.cityId) {
+        errors.push('Город является обязательным полем')
+      }
+
+      if (!this.localEditData.contactInfo?.trim()) {
+        errors.push('Контактная информация является обязательным полем')
+      } else if (this.localEditData.contactInfo.trim().length < 5) {
+        errors.push('Контактная информация должна содержать минимум 5 символов')
+      }
+
+      if (this.localEditData.newPassword || this.localEditData.confirmNewPassword) {
+        if (!this.localEditData.currentPassword) {
+          errors.push('Для смены пароля необходимо указать текущий пароль')
+        }
+
+        if (this.localEditData.newPassword !== this.localEditData.confirmNewPassword) {
+          errors.push('Новый пароль и подтверждение не совпадают')
+        }
+
+        if (this.localEditData.newPassword && this.localEditData.newPassword.length < 6) {
+          errors.push('Новый пароль должен содержать минимум 6 символов')
+        }
+      }
+
+      return errors
+    },
+
+    isValidEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      return emailRegex.test(email)
+    },
+
+    hasError(fieldName) {
+      return this.validationErrors.some((error) =>
+        error.toLowerCase().includes(fieldName.toLowerCase()),
+      )
+    },
+
+    getErrorText(fieldName) {
+      const error = this.validationErrors.find((error) =>
+        error.toLowerCase().includes(fieldName.toLowerCase()),
+      )
+      return error || ''
+    },
+
+    emitUpdate() {
+      this.$emit('update:editData', { ...this.localEditData })
+    },
+
+    formatDate(dateString) {
+      if (!dateString) return ''
+      try {
+        const date = new Date(dateString)
+        return date.toLocaleDateString('ru-RU')
+      } catch {
+        return dateString
+      }
+    },
+
+    getCityName(cityId) {
+      if (!cityId) return ''
+
+      try {
+        for (let i = 0; i < this.cities.length; i++) {
+          const city = this.cities[i]
+          if (city.cityId === cityId) {
+            return city.cityName
+          }
+        }
+        return ''
+      } catch {
+        return ''
+      }
+    },
+
+    toggleCityDropdown() {
+      this.isCityDropdownOpen = !this.isCityDropdownOpen
+      if (this.isCityDropdownOpen) {
+        this.citySearch = ''
+      }
+    },
+
+    selectCity(cityId) {
+      this.localEditData.cityId = cityId
+      this.isCityDropdownOpen = false
+      this.citySearch = ''
+      this.emitUpdate()
+    },
+
+    closeDropdowns(event) {
+      if (!event.target.closest('.custom-select-wrapper')) {
+        this.isCityDropdownOpen = false
+      }
+    }
+  },
+  mounted() {
+    document.addEventListener('click', this.closeDropdowns)
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.closeDropdowns)
   }
 }
 </script>
@@ -502,12 +556,6 @@ export default {
   border: 1px solid rgba(108, 99, 255, 0.1);
   transition: all 0.3s ease;
 }
-
-.compact-row:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
-}
-
 .compact-field {
   display: flex;
   flex-direction: column;
@@ -575,7 +623,7 @@ export default {
 
 .compact-input:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--primary);
   background: white;
   box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
 }
@@ -642,7 +690,7 @@ select.compact-input {
 
 .compact-textarea:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--primary);
   background: white;
   box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
 }
@@ -715,23 +763,154 @@ select.compact-input {
 }
 
 .field-error::before {
-  content: '⚠';
   font-size: 0.7rem;
 }
-
-.password-errors {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: #fff5f5;
-  border: 1px solid #fed7d7;
-  border-radius: 6px;
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+  z-index: 100;
 }
 
-.password-errors .field-error {
-  margin-bottom: 0.25rem;
+.custom-select-header {
+  background: #f8f9ff;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  min-height: 44px;
 }
 
-.password-errors .field-error:last-child {
-  margin-bottom: 0;
+.custom-select-header:hover {
+  border-color: #c0c0c0;
+}
+
+.custom-select-header.open {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+}
+
+.custom-select-header.input-error {
+  border-color: #e53e3e;
+  background-color: #fff5f5;
+}
+
+.selected-value {
+  color: var(--secondary);
+}
+
+.custom-arrow {
+  transition: transform 0.3s ease;
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.custom-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white !important;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+  margin-top: 4px;
+  overflow: hidden;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.dropdown-search {
+  padding: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--primary);
+}
+
+.dropdown-list {
+  max-height: 200px;
+  overflow-y: auto;
+  background: white !important;
+}
+
+.dropdown-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f8f9fa;
+  transition: background-color 0.2s ease;
+  font-size: 0.95rem;
+  background: white;
+}
+
+.dropdown-item:hover {
+  background: white;
+  opacity: 1;
+}
+
+.dropdown-item.selected {
+  background: var(--primary) !important;
+  color: white;
+  opacity: 1 !important;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.no-results {
+  padding: 16px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.dropdown-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dropdown-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .custom-select-dropdown {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 400px;
+    max-height: 60vh;
+  }
 }
 </style>

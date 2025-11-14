@@ -29,6 +29,14 @@
             </button>
           </div>
         </div>
+
+        <!-- Кнопка выхода -->
+        <div class="logout-section">
+          <button class="btn btn-logout" @click="handleLogout">
+            <i class="fas fa-sign-out-alt"></i>
+            Выход
+          </button>
+        </div>
       </div>
     </main>
   </div>
@@ -39,7 +47,7 @@ import { ref, computed, onMounted } from 'vue'
 import AppHeader from '@/components/ui/AppHeader.vue'
 import PersonalInfoSection from '@/components/sections/profile/PersonalInfoSection.vue'
 import { userService } from '@/api/userService'
-import { userState, initUserSession } from '@/composables/userSession'
+import { userState, initUserSession, logout } from '@/composables/userSession'
 import { useRouter } from 'vue-router'
 
 const userData = ref({})
@@ -47,36 +55,32 @@ const editData = ref({})
 const isEditing = ref(false)
 const validationErrors = ref([])
 const personalInfoRef = ref(null)
-const router = useRouter()
 const cities = ref([])
+const router = useRouter()
 
 const loadCities = async () => {
   try {
     cities.value = await userService.getCities()
   } catch (error) {
-    console.error(' Ошибка загрузки городов:', error)
+    console.error('Ошибка загрузки городов:', error)
   }
 }
 
 const isAuthenticated = computed(() => userState.isAuthenticated)
 
 const loadUserProfile = async () => {
-  if (!isAuthenticated.value) {
-    return
-  }
+  if (!isAuthenticated.value) return
 
   const userId = userState.userId || userState.user?.userId || userState.user?.id
-
   if (userId) {
     try {
       userData.value = await userService.getProfileById(userId)
       editData.value = { ...userData.value }
-    } catch {
+    } catch (error) {
+      console.error('Ошибка загрузки профиля:', error)
       userData.value = {}
       editData.value = {}
     }
-  } else {
-    console.log('userId не найден')
   }
 }
 
@@ -105,7 +109,7 @@ const saveProfile = async () => {
     }
 
     const validationErrorsArray = personalInfoRef.value.validateForm()
-
+    
     if (validationErrorsArray && validationErrorsArray.length > 0) {
       const errorMessage = validationErrorsArray.join('\n• ')
       alert('Обнаружены ошибки:\n• ' + errorMessage)
@@ -114,9 +118,9 @@ const saveProfile = async () => {
     }
 
     const userId = userState.userId
-
+    
     if (!userId) {
-      alert('Пользователь не идентифицирован')
+      alert('Ошибка: пользователь не идентифицирован')
       return
     }
 
@@ -136,7 +140,7 @@ const saveProfile = async () => {
     }
 
     await userService.updateProfile(userId, dataToSend)
-
+    
     await loadUserProfile()
     isEditing.value = false
 
@@ -145,7 +149,7 @@ const saveProfile = async () => {
     editData.value.confirmNewPassword = ''
 
     alert('Профиль успешно обновлен!')
-
+    
   } catch (error) {
     console.error('Ошибка сохранения профиля:', error)
     handleSaveError(error)
@@ -154,10 +158,10 @@ const saveProfile = async () => {
 
 const handleSaveError = (error) => {
   let errorMessage = 'Ошибка при сохранении профиля'
-
+  
   if (error.response?.data) {
     const errorData = error.response.data
-
+    
     if (errorData.errors) {
       const errorMessages = []
       for (const key in errorData.errors) {
@@ -165,12 +169,12 @@ const handleSaveError = (error) => {
         errorMessages.push(...fieldErrors)
         validationErrors.value.push(...fieldErrors)
       }
-
+      
       if (errorMessages.length > 0) {
         errorMessage = errorMessages.join('\n• ')
         alert('Ошибки валидации:\n• ' + errorMessage)
       }
-
+      
     } else if (errorData.message) {
       errorMessage = errorData.message
       validationErrors.value.push(errorData.message)
@@ -180,7 +184,7 @@ const handleSaveError = (error) => {
       alert('Ошибка при сохранении профиля')
     }
   } else if (error.request) {
-    errorMessage = 'Yе удалось подключиться к серверу'
+    errorMessage = 'Ошибка сети: не удалось подключиться к серверу'
     validationErrors.value.push(errorMessage)
     alert(errorMessage)
   } else {
@@ -193,6 +197,21 @@ const updateEditData = (newData) => {
   editData.value = newData
 }
 
+const handleLogout = async () => {
+  if (confirm('Вы уверены, что хотите выйти?')) {
+    try {
+      await userService.logout()
+      logout() // Вызываем функцию logout из userSession
+      router.push('/')
+    } catch (error) {
+      console.error('Ошибка при выходе:', error)
+      // Все равно выполняем выход на клиенте
+      logout()
+      router.push('/')
+    }
+  }
+}
+
 onMounted(async () => {
   initUserSession()
 
@@ -201,6 +220,7 @@ onMounted(async () => {
     router.push('/')
     return
   }
+
   await Promise.all([loadUserProfile(), loadCities()])
 })
 </script>
@@ -255,6 +275,15 @@ onMounted(async () => {
   justify-content: center;
 }
 
+.logout-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  padding: 0 1rem;
+  width: 100%;
+  max-width: 600px;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -299,33 +328,14 @@ onMounted(async () => {
   transform: translateY(-2px);
 }
 
-.validation-errors {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: #fff5f5;
-  border: 1px solid #fed7d7;
-  border-radius: 8px;
-  max-width: 600px;
-  width: 100%;
+.btn-logout {
+  background: #dc3545;
+  color: white;
 }
 
-.error-message {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #e53e3e;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.validation-errors ul {
-  margin: 0;
-  padding-left: 1.5rem;
-}
-
-.validation-errors li {
-  color: #e53e3e;
-  margin-bottom: 0.25rem;
+.btn-logout:hover {
+  background: #c82333;
+  transform: translateY(-2px);
 }
 
 @media (max-width: 768px) {
@@ -344,7 +354,8 @@ onMounted(async () => {
     justify-content: center;
   }
 
-  .profile-actions {
+  .profile-actions,
+  .logout-section {
     max-width: 300px;
   }
 }

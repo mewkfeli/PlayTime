@@ -555,6 +555,9 @@ const joinEvent = async (event) => {
 }
 </script>
 <style scoped>
+* {
+  font-size: 18px;
+}
 .events-page {
   min-height: 100vh;
   background: var(--light);
@@ -762,6 +765,7 @@ const joinEvent = async (event) => {
   background-color: var(--primary);
   color: white;
   border-radius: 36.5px;
+  font-size: 18px;
 }
 
 .btn-primary:hover:not(:disabled) {
