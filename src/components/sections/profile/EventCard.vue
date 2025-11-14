@@ -75,7 +75,7 @@ const handleJoin = async () => {
 
   const userId = userState.userId
   if (!userId) {
-    alert('Ошибка: пользователь не идентифицирован')
+    alert('Пользователь не идентифицирован')
     return
   }
 

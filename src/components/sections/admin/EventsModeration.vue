@@ -27,7 +27,6 @@
     </div>
 
     <div v-else-if="error" class="error-container">
-      <div class="error-icon">⚠️</div>
       <h2>Ошибка загрузки</h2>
       <p>{{ error }}</p>
       <button class="btn btn-primary" @click="loadEvents">Попробовать снова</button>
@@ -233,7 +232,7 @@ const cancelEvent = async (eventId, eventTitle) => {
       try {
         errorText = await response.text()
       } catch {
-        errorText = `Ошибка: ${response.status}`
+        errorText = `${response.status}`
       }
       throw new Error(errorText)
     }

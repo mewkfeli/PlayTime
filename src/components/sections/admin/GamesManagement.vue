@@ -393,7 +393,7 @@ const searchGames = async () => {
     } else if (response.status === 400) {
       games.value = []
     } else {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(`${response.status}`)
     }
   } catch (err) {
     console.error('Ошибка поиска:', err)

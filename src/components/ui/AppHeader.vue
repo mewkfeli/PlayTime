@@ -67,7 +67,6 @@ const goToAdmin = () => {
 </script>
 
 <style scoped>
-/* Стили остаются без изменений */
 .header {
   display: flex;
   justify-content: space-between;

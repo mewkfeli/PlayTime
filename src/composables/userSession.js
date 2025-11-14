@@ -73,7 +73,6 @@ export const useUser = () => {
 
     isAdmin: computed(() => {
       const role = userState.userRole
-      console.log('Checking admin role:', role)
       return role === 'Администратор'
     }),
   }
