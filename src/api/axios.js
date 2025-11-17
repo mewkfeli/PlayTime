@@ -38,7 +38,7 @@ api.interceptors.response.use(
       }
       throw message
     } else if (error.request) {
-      throw 'Сервер не отвечает. Проверьте подключение.'
+      throw 'Сервер не отвечает'
     } else {
       throw 'Ошибка настройки запроса: ' + error.message
     }

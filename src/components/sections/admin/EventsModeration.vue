@@ -5,6 +5,95 @@
       <div class="page-subtitle">Управление событиями пользователей</div>
     </div>
 
+    <div class="report-section">
+      <div class="report-header">
+        <h2>Генерация отчета</h2>
+        <p>Сформируйте отчет о проведенных мероприятиях за выбранный период</p>
+      </div>
+
+      <div class="report-controls">
+        <div class="date-inputs">
+          <div class="input-group">
+            <label for="start-date">Дата начала:</label>
+            <input id="start-date" type="date" v-model="reportStartDate" class="date-input">
+          </div>
+          <div class="input-group">
+            <label for="end-date">Дата окончания:</label>
+            <input id="end-date" type="date" v-model="reportEndDate" class="date-input">
+          </div>
+        </div>
+
+        <div class="report-actions">
+          <button class="btn btn-primary" @click="generateReport" :disabled="generatingReport">
+            <i class="fas fa-chart-bar"></i>
+            {{ generatingReport ? 'Формирование...' : 'Сформировать отчет' }}
+          </button>
+
+          <button v-if="reportData" class="btn btn-success" @click="downloadWordReport" :disabled="downloadingReport">
+            <i class="fas fa-download"></i>
+            {{ downloadingReport ? 'Скачивание...' : 'Скачать Word' }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="reportData" class="report-preview">
+        <h3>Предпросмотр отчета</h3>
+        <div class="preview-content">
+          <div class="preview-section">
+            <h4>Основные показатели</h4>
+            <div class="preview-stats">
+              <div class="preview-stat">
+                <span class="stat-label">Общее количество мероприятий:</span>
+                <span class="stat-value">{{ reportData.totalEvents }}</span>
+              </div>
+              <div class="preview-stat">
+                <span class="stat-label">Среднее кол-во игроков:</span>
+                <span class="stat-value">{{ reportData.averagePlayers }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="preview-section">
+            <h4>Статусы мероприятий</h4>
+            <div class="preview-stats">
+              <div class="preview-stat">
+                <span class="stat-label">Успешно проведено:</span>
+                <span class="stat-value">{{ reportData.statusStats.completed }}</span>
+              </div>
+              <div class="preview-stat">
+                <span class="stat-label">Отменено:</span>
+                <span class="stat-value">{{ reportData.statusStats.cancelled }}</span>
+              </div>
+              <div class="preview-stat">
+                <span class="stat-label">Активно:</span>
+                <span class="stat-value">{{ reportData.statusStats.active }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="preview-section">
+            <h4>Топ 5 городов</h4>
+            <ol class="top-list">
+              <li v-for="(city, index) in reportData.topCities" :key="index">
+                {{ city.cityName }} ({{ city.eventCount }} мероприятий)
+              </li>
+              <li v-if="reportData.topCities.length === 0" class="no-data">Нет данных</li>
+            </ol>
+          </div>
+
+          <div class="preview-section">
+            <h4>Топ 5 игр</h4>
+            <ol class="top-list">
+              <li v-for="(game, index) in reportData.topGames" :key="index">
+                {{ game.gameName }} ({{ game.eventCount }} мероприятий)
+              </li>
+              <li v-if="reportData.topGames.length === 0" class="no-data">Нет данных</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-value">{{ events.length }}</div>
@@ -33,8 +122,18 @@
 
     <div v-else class="events-table-container">
       <div class="table-header">
-        <div class="table-stats">Найдено событий: {{ events.length }}</div>
-        <div class="table-actions"></div>
+        <div class="table-stats">Найдено событий: {{ filteredEvents.length }}</div>
+        <div class="table-actions">
+          <div class="filter-group">
+            <label for="status-filter" class="filter-label">Статус:</label>
+            <select id="status-filter" v-model="selectedStatus" class="status-filter">
+              <option value="all">Все статусы</option>
+              <option value="Активно">Активно</option>
+              <option value="Отменено">Отменено</option>
+              <option value="Закончено">Завершено</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div class="events-table">
@@ -47,12 +146,15 @@
           <div class="table-cell">Действия</div>
         </div>
 
-        <div v-if="events.length === 0" class="empty-state">
+        <div v-if="filteredEvents.length === 0" class="empty-state">
           <i class="fas fa-calendar-times"></i>
           <p>События не найдены</p>
+          <p v-if="selectedStatus !== 'all'" class="empty-state-hint">
+            Попробуйте выбрать другой статус
+          </p>
         </div>
 
-        <div v-else v-for="event in events" :key="event.eventId" class="table-row">
+        <div v-else v-for="event in filteredEvents" :key="event.eventId" class="table-row">
           <div class="table-cell">
             <span class="event-id">#{{ event.eventId }}</span>
           </div>
@@ -62,12 +164,10 @@
             <div class="event-meta">
               <span class="game">{{ getGameName(event.gameId) }}</span>
               <span class="location">{{ event.location }}</span>
-              <span class="participants"
-                >{{ event.eventParticipants ? event.eventParticipants.length : 0 }}/{{
-                  event.maxParticipants
+              <span class="participants">{{ event.eventParticipants ? event.eventParticipants.length : 0 }}/{{
+                event.maxParticipants
                 }}
-                участ.</span
-              >
+                участ.</span>
             </div>
             <div v-if="event.description" class="event-description">
               {{ event.description }}
@@ -96,12 +196,8 @@
           </div>
 
           <div class="table-cell actions">
-            <button
-              v-if="event.status === 'Активно'"
-              class="btn btn-cancel"
-              @click="cancelEvent(event.eventId, event.eventName)"
-              :disabled="cancelingEventId === event.eventId"
-            >
+            <button v-if="event.status === 'Активно'" class="btn btn-cancel"
+              @click="cancelEvent(event.eventId, event.eventName)" :disabled="cancelingEventId === event.eventId">
               <i class="fas fa-ban"></i>
               {{ cancelingEventId === event.eventId ? '...' : 'Отменить' }}
             </button>
@@ -122,6 +218,117 @@ const events = ref([])
 const users = ref([])
 const games = ref([])
 const cancelingEventId = ref(null)
+const selectedStatus = ref('all')
+
+const reportStartDate = ref('')
+const reportEndDate = ref('')
+const reportData = ref(null)
+const generatingReport = ref(false)
+const downloadingReport = ref(false)
+
+const initializeDates = () => {
+  const endDate = new Date()
+  const startDate = new Date()
+  startDate.setDate(startDate.getDate() - 30)
+
+  reportEndDate.value = endDate.toISOString().split('T')[0]
+  reportStartDate.value = startDate.toISOString().split('T')[0]
+}
+
+
+const generateReport = async () => {
+  if (!reportStartDate.value || !reportEndDate.value) {
+    alert('Пожалуйста, выберите даты начала и окончания периода')
+    return
+  }
+
+  try {
+    generatingReport.value = true
+    error.value = ''
+
+    const params = new URLSearchParams({
+      startDate: reportStartDate.value,
+      endDate: reportEndDate.value
+    })
+
+    console.log('Запрос отчета с параметрами:', params.toString())
+
+    const response = await fetch(`http://localhost:5119/api/Admin/GenerateEventsReport?${params}`)
+
+    if (!response.ok) {
+      throw new Error(`Ошибка генерации отчета: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log('Получены данные отчета:', data)
+    reportData.value = data
+  } catch (err) {
+    error.value = 'Не удалось сгенерировать отчет'
+    console.error('Ошибка при генерации отчета:', err)
+    alert('Ошибка при генерации отчета: ' + err.message)
+  } finally {
+    generatingReport.value = false
+  }
+}
+
+const downloadWordReport = async () => {
+  if (!reportData.value) return
+
+  try {
+    downloadingReport.value = true
+
+    const requestData = {
+      reportData: reportData.value,
+      startDate: reportStartDate.value,
+      endDate: reportEndDate.value
+    }
+
+    const response = await fetch('http://localhost:5119/api/Admin/DownloadEventsReport', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Ошибка скачивания: ${response.status} - ${errorText}`)
+    }
+
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+
+    const fileName = `Отчет_мероприятия_${reportStartDate.value}_${reportEndDate.value}.docx`
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+
+  } catch (err) {
+    console.error('Ошибка при скачивании отчета:', err)
+    alert('Ошибка при скачивании отчета: ' + err.message)
+  } finally {
+    downloadingReport.value = false
+  }
+}
+
+const filteredEvents = computed(() => {
+  let filtered = events.value
+
+  if (selectedStatus.value !== 'all') {
+    filtered = filtered.filter(event => event.status === selectedStatus.value)
+  }
+
+  return filtered.sort((a, b) => {
+    const dateA = new Date(a.eventDatetime)
+    const dateB = new Date(b.eventDatetime)
+    return dateB - dateA
+  })
+})
 
 const activeEventsCount = computed(() => {
   return events.value.filter((event) => event.status === 'Активно').length
@@ -283,7 +490,7 @@ const getStatusClass = (status) => {
       return 'status-active'
     case 'Отменено':
       return 'status-canceled'
-    case 'Завершено':
+    case 'Закончено':
       return 'status-completed'
     default:
       return 'status-default'
@@ -292,6 +499,7 @@ const getStatusClass = (status) => {
 
 onMounted(() => {
   loadEvents()
+  initializeDates()
 })
 </script>
 
@@ -318,6 +526,189 @@ onMounted(() => {
   color: #666;
 }
 
+.report-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.report-header {
+  margin-bottom: 1.5rem;
+}
+
+.report-header h2 {
+  color: var(--secondary);
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+}
+
+.report-header p {
+  color: #666;
+  margin: 0;
+}
+
+.report-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.date-inputs {
+  display: flex;
+  gap: 2rem;
+  align-items: end;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-group label {
+  font-weight: 500;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.date-input {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  min-width: 200px;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+}
+
+.report-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 36.2px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  color: white;
+  border: none;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #45a049;
+  transform: translateY(-1px);
+}
+
+.report-preview {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.report-preview h3 {
+  color: var(--secondary);
+  margin-bottom: 1rem;
+}
+
+.preview-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.preview-section {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.preview-section h4 {
+  color: var(--secondary);
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+}
+
+.preview-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.preview-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.preview-stat:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  color: #666;
+  font-weight: 500;
+}
+
+.stat-value {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.top-list {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.top-list li {
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.no-data {
+  color: #999;
+  font-style: italic;
+}
+
+/* Существующие стили */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -370,6 +761,36 @@ onMounted(() => {
 .table-actions {
   display: flex;
   gap: 1rem;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-weight: 500;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.status-filter {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.9rem;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.status-filter:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
 }
 
 .events-table {
@@ -505,30 +926,11 @@ onMounted(() => {
   justify-content: center;
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.8rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .btn-cancel {
   background: rgba(244, 67, 54, 0.1);
   color: #f44336;
   border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: 36.2px;
 }
 
 .btn-cancel:hover:not(:disabled) {
@@ -553,6 +955,12 @@ onMounted(() => {
   font-size: 3rem;
   margin-bottom: 1rem;
   color: #ccc;
+}
+
+.empty-state-hint {
+  font-size: 0.9rem;
+  color: #999;
+  margin-top: 0.5rem;
 }
 
 /* Состояния загрузки */
@@ -580,6 +988,7 @@ onMounted(() => {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -623,6 +1032,33 @@ onMounted(() => {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .status-filter {
+    flex: 1;
+    min-width: auto;
+  }
+
+  .date-inputs {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .date-input {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .report-actions {
+    flex-direction: column;
+  }
+
+  .preview-content {
+    grid-template-columns: 1fr;
   }
 }
 

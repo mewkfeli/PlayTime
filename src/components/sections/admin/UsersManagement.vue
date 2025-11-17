@@ -5,7 +5,6 @@
       <div class="page-subtitle">Просмотр и управление пользователями системы</div>
     </div>
 
-    <!-- Статистика -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-value">{{ users.length }}</div>
@@ -21,7 +20,6 @@
       </div>
     </div>
 
-    <!-- Состояния загрузки и ошибок -->
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
       <p>Загрузка пользователей...</p>
@@ -34,11 +32,28 @@
       <button class="btn btn-primary" @click="loadUsers">Попробовать снова</button>
     </div>
 
-    <!-- Таблица пользователей -->
     <div v-else class="users-table-container">
       <div class="table-header">
-        <div class="table-stats">Найдено пользователей: {{ users.length }}</div>
-        <div class="table-actions"></div>
+        <div class="table-stats">Найдено пользователей: {{ filteredUsers.length }}</div>
+        <div class="table-actions">
+          <div class="filters-container">
+            <div class="filter-group">
+              <label for="search-input" class="filter-label">
+                <i class="fas fa-search"></i>
+              </label>
+              <input id="search-input" v-model="searchQuery" type="text" class="search-input"
+                placeholder="Поиск по имени..." />
+            </div>
+            <div class="filter-group">
+              <label for="role-filter" class="filter-label">Роль:</label>
+              <select id="role-filter" v-model="selectedRole" class="role-filter">
+                <option value="all">Все роли</option>
+                <option value="Администратор">Администраторы</option>
+                <option value="Пользователь">Пользователи</option>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="users-table">
@@ -53,12 +68,15 @@
           <div class="table-cell">Контакты</div>
         </div>
 
-        <div v-if="users.length === 0" class="empty-state">
+        <div v-if="filteredUsers.length === 0" class="empty-state">
           <i class="fas fa-users"></i>
           <p>Пользователи не найдены</p>
+          <p v-if="searchQuery || selectedRole !== 'all'" class="empty-state-hint">
+            Попробуйте изменить параметры поиска
+          </p>
         </div>
 
-        <div v-else v-for="user in users" :key="user.userId" class="table-row">
+        <div v-else v-for="user in filteredUsers" :key="user.userId" class="table-row">
           <div class="table-cell">
             <span class="user-id">#{{ user.userId }}</span>
           </div>
@@ -83,13 +101,8 @@
           </div>
 
           <div class="table-cell">
-            <select
-              v-model="user.role"
-              class="role-select"
-              :class="getRoleClass(user.role)"
-              @change="changeUserRole(user.userId, user.role, user.name)"
-              :disabled="changingRoleId === user.userId"
-            >
+            <select v-model="user.role" class="role-select" :class="getRoleClass(user.role)"
+              @change="changeUserRole(user.userId, user.role, user.name)" :disabled="changingRoleId === user.userId">
               <option value="Пользователь">Пользователь</option>
               <option value="Администратор">Администратор</option>
             </select>
@@ -119,6 +132,36 @@ const error = ref('')
 const users = ref([])
 const cities = ref([])
 const changingRoleId = ref(null)
+const searchQuery = ref('')
+const selectedRole = ref('all')
+
+const filteredUsers = computed(() => {
+  let filtered = users.value
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(user =>
+      user.name.toLowerCase().includes(query)
+    )
+  }
+
+  if (selectedRole.value !== 'all') {
+    filtered = filtered.filter(user => {
+      if (selectedRole.value === 'Администратор') {
+        return user.role === 'Администратор'
+      } else if (selectedRole.value === 'Пользователь') {
+        return user.role === 'Пользователь'
+      }
+      return true
+    })
+  }
+
+  return filtered.sort((a, b) => {
+    const dateA = new Date(a.createdAt)
+    const dateB = new Date(b.createdAt)
+    return dateB - dateA
+  })
+})
 
 const adminsCount = computed(() => {
   return users.value.filter(
@@ -145,9 +188,9 @@ const loadUsers = async () => {
     const data = await response.json()
     users.value = Array.isArray(data)
       ? data.map((user) => ({
-          ...user,
-          passwordHash: undefined,
-        }))
+        ...user,
+        passwordHash: undefined,
+      }))
       : []
 
     await loadCities()
@@ -208,7 +251,7 @@ const changeUserRole = async (userId, newRole, userName) => {
       try {
         errorText = await response.text()
       } catch {
-        errorText = `Ошибка: ${response.status}`
+        errorText = `${response.status}`
       }
       throw new Error(errorText)
     }
@@ -351,6 +394,67 @@ onMounted(() => {
   gap: 1rem;
 }
 
+.filters-container {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-weight: 500;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.filter-label i {
+  color: #999;
+}
+
+.search-input {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.9rem;
+  color: #333;
+  transition: all 0.3s ease;
+  min-width: 200px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.role-filter {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.9rem;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.role-filter:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+}
+
 .users-table {
   width: 100%;
 }
@@ -488,6 +592,12 @@ onMounted(() => {
   color: #ccc;
 }
 
+.empty-state-hint {
+  font-size: 0.9rem;
+  color: #999;
+  margin-top: 0.5rem;
+}
+
 /* Состояния загрузки */
 .loading-container,
 .error-container {
@@ -513,6 +623,7 @@ onMounted(() => {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -566,6 +677,22 @@ onMounted(() => {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
+  }
+
+  .filters-container {
+    flex-direction: column;
+    width: 100%;
+    gap: 1rem;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .search-input,
+  .role-filter {
+    flex: 1;
+    min-width: auto;
   }
 }
 </style>

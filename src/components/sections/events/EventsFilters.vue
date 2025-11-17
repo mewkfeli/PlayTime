@@ -9,15 +9,15 @@
         </div>
         <div v-if="dropdowns.city" class="select-dropdown">
           <div class="dropdown-list">
-            <div 
-              class="dropdown-item" 
+            <div
+              class="dropdown-item"
               :class="{ 'selected': !localFilters.city }"
               @click="selectOption('city', '')"
             >
               Все города
             </div>
-            <div 
-              v-for="city in cities" 
+            <div
+              v-for="city in cities"
               :key="city.cityId"
               class="dropdown-item"
               :class="{ 'selected': localFilters.city === city.cityName }"
@@ -39,15 +39,15 @@
         </div>
         <div v-if="dropdowns.game" class="select-dropdown">
           <div class="dropdown-list">
-            <div 
-              class="dropdown-item" 
+            <div
+              class="dropdown-item"
               :class="{ 'selected': !localFilters.game }"
               @click="selectOption('game', '')"
             >
               Все игры
             </div>
-            <div 
-              v-for="game in games" 
+            <div
+              v-for="game in games"
               :key="game.gameId"
               class="dropdown-item"
               :class="{ 'selected': localFilters.game === game.gameName }"
@@ -243,7 +243,7 @@ watch(
 
 .dropdown-list {
   max-height: 200px;
-  overflow-y: auto; 
+  overflow-y: auto;
   padding: 4px 0;
 }
 
@@ -260,7 +260,7 @@ watch(
 }
 
 .dropdown-item.selected {
-  background: #3b82f6;
+  background: var(--primary);
   color: white;
 }
 

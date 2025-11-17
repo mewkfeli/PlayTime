@@ -111,7 +111,7 @@ const saveProfile = async () => {
     }
 
     const validationErrorsArray = personalInfoRef.value.validateForm()
-    
+
     if (validationErrorsArray && validationErrorsArray.length > 0) {
       const errorMessage = validationErrorsArray.join('\n• ')
       alert('Обнаружены ошибки:\n• ' + errorMessage)
@@ -120,9 +120,9 @@ const saveProfile = async () => {
     }
 
     const userId = userState.userId
-    
+
     if (!userId) {
-      alert('Ошибка: пользователь не идентифицирован')
+      alert('Пользователь не авторизован')
       return
     }
 
@@ -142,7 +142,7 @@ const saveProfile = async () => {
     }
 
     await userService.updateProfile(userId, dataToSend)
-    
+
     await loadUserProfile()
     isEditing.value = false
 
@@ -151,7 +151,7 @@ const saveProfile = async () => {
     editData.value.confirmNewPassword = ''
 
     alert('Профиль успешно обновлен!')
-    
+
   } catch (error) {
     console.error('Ошибка сохранения профиля:', error)
     handleSaveError(error)
@@ -160,10 +160,10 @@ const saveProfile = async () => {
 
 const handleSaveError = (error) => {
   let errorMessage = 'Ошибка при сохранении профиля'
-  
+
   if (error.response?.data) {
     const errorData = error.response.data
-    
+
     if (errorData.errors) {
       const errorMessages = []
       for (const key in errorData.errors) {
@@ -171,12 +171,12 @@ const handleSaveError = (error) => {
         errorMessages.push(...fieldErrors)
         validationErrors.value.push(...fieldErrors)
       }
-      
+
       if (errorMessages.length > 0) {
         errorMessage = errorMessages.join('\n• ')
         alert('Ошибки валидации:\n• ' + errorMessage)
       }
-      
+
     } else if (errorData.message) {
       errorMessage = errorData.message
       validationErrors.value.push(errorData.message)
@@ -203,7 +203,7 @@ const handleLogout = async () => {
   if (confirm('Вы уверены, что хотите выйти?')) {
     try {
       await userService.logout()
-      logout() 
+      logout()
       router.push('/')
     } catch (error) {
       console.error('Ошибка при выходе:', error)
@@ -302,6 +302,7 @@ onMounted(async () => {
 .btn-primary {
   background: var(--primary);
   color: white;
+  border-radius: 36.2px;
 }
 
 .btn-primary:hover {
@@ -312,6 +313,7 @@ onMounted(async () => {
 .btn-secondary {
   background: #6c757d;
   color: white;
+  border-radius: 36.2px;
 }
 
 .btn-secondary:hover {
@@ -322,6 +324,7 @@ onMounted(async () => {
 .btn-success {
   background: #28a745;
   color: white;
+  border-radius: 36.2px;
 }
 
 .btn-success:hover {
@@ -332,6 +335,7 @@ onMounted(async () => {
 .btn-logout {
   background: #dc3545;
   color: white;
+  border-radius: 36.2px;
 }
 
 .btn-logout:hover {

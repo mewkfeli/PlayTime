@@ -14,13 +14,8 @@
           </button>
         </div>
 
-        <EventsFilters
-          :filters="filters"
-          :games="games"
-          :cities="cities"
-          @filter-change="handleFilterChange"
-          @search="handleSearch"
-        />
+        <EventsFilters :filters="filters" :games="games" :cities="cities" @filter-change="handleFilterChange"
+          @search="handleSearch" />
       </div>
 
       <div v-if="loading">Загрузка...</div>
@@ -30,11 +25,7 @@
       </div>
     </main>
 
-    <div
-      v-if="showCreateModal"
-      class="modal-overlay"
-      @click.self="showCreateModal = false"
-      style="
+    <div v-if="showCreateModal" class="modal-overlay" @click.self="closeModal" style="
         position: fixed;
         top: 0;
         left: 0;
@@ -45,11 +36,8 @@
         align-items: center;
         justify-content: center;
         z-index: 10000;
-      "
-    >
-      <div
-        class="modal-container"
-        style="
+      ">
+      <div class="modal-container" style="
           background: white;
           border-radius: 12px;
           width: 90%;
@@ -57,23 +45,17 @@
           max-height: 100vh;
           overflow: auto;
           padding: 0;
-        "
-      >
-        <div
-          class="modal-header"
-          style="
+        ">
+        <div class="modal-header" style="
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 1.5rem 2rem;
             border-bottom: 1px solid #e0e0e0;
-          "
-        >
+          ">
           <h2 style="margin: 0; color: #333">Создание нового события</h2>
-          <button
-            @click="showCreateModal = false"
-            style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #666"
-          >
+          <button @click="closeModal"
+            style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #666">
             <i class="times"></i>
           </button>
         </div>
@@ -83,72 +65,80 @@
             <div class="form-grid">
               <div class="form-group">
                 <label class="form-label">Название события (мин. 10 знаков) *</label>
-                <input
-                  type="text"
-                  class="form-input"
-                  v-model="newEvent.eventName"
-                  placeholder="Введите название события"
-                  required
-                />
+                <input type="text" class="form-input" v-model="newEvent.eventName"
+                  placeholder="Введите название события" required />
               </div>
 
               <div class="form-group">
                 <label class="form-label">Игра *</label>
-                <select class="form-input" v-model="newEvent.gameId" required>
-                  <option value="">Выберите игру</option>
-                  <option v-for="game in games" :key="game.gameId" :value="game.gameId">
-                    {{ game.gameName }}
-                  </option>
-                </select>
+                <div class="custom-select">
+                  <div class="select-header" :class="{ 'active': gameDropdownOpen }" @click="toggleGameDropdown">
+                    <span>{{ getSelectedGameLabel }}</span>
+                    <span class="arrow" :class="{ 'rotated': gameDropdownOpen }">▼</span>
+                  </div>
+                  <div v-if="gameDropdownOpen" class="select-dropdown">
+                    <div class="dropdown-list">
+                      <div class="dropdown-item" :class="{ 'selected': !newEvent.gameId }" @click="selectGame('', '')">
+                        Выберите игру
+                      </div>
+                      <div v-for="game in games" :key="game.gameId" class="dropdown-item"
+                        :class="{ 'selected': newEvent.gameId === game.gameId }"
+                        @click="selectGame(game.gameId, game.gameName)">
+                        {{ game.gameName }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="form-group">
                 <label class="form-label">Дата и время *</label>
-                <input
-                  type="datetime-local"
-                  class="form-input"
-                  v-model="newEvent.eventDatetime"
-                  required
-                />
+                <input type="datetime-local" class="form-input" v-model="newEvent.eventDatetime" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Город *</label>
+                <div class="custom-select">
+                  <div class="select-header" :class="{ 'active': cityDropdownOpen }" @click="toggleCityDropdown">
+                    <span>{{ getSelectedCityLabel }}</span>
+                    <span class="arrow" :class="{ 'rotated': cityDropdownOpen }">▼</span>
+                  </div>
+                  <div v-if="cityDropdownOpen" class="select-dropdown">
+                    <div class="dropdown-list">
+                      <div class="dropdown-item" :class="{ 'selected': !newEvent.cityId }" @click="selectCity('', '')">
+                        Выберите город
+                      </div>
+                      <div v-for="city in cities" :key="city.cityId" class="dropdown-item"
+                        :class="{ 'selected': newEvent.cityId === city.cityId }"
+                        @click="selectCity(city.cityId, city.cityName)">
+                        {{ city.cityName }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="form-group">
                 <label class="form-label">Место проведения *</label>
-                <input
-                  type="text"
-                  class="form-input"
-                  v-model="newEvent.location"
-                  placeholder="Укажите место проведения"
-                  required
-                />
+                <input type="text" class="form-input" v-model="newEvent.location" placeholder="Укажите место проведения"
+                  required />
               </div>
 
               <div class="form-group">
                 <label class="form-label">Максимальное количество участников *</label>
-                <input
-                  type="number"
-                  class="form-input"
-                  v-model="newEvent.maxParticipants"
-                  min="2"
-                  max="50"
-                  placeholder="От 2 до 50"
-                  required
-                />
+                <input type="number" class="form-input" v-model="newEvent.maxParticipants" min="2" max="50"
+                  placeholder="От 2 до 50" required />
               </div>
 
               <div class="form-group full-width">
                 <label class="form-label">Описание события</label>
-                <textarea
-                  class="form-textarea"
-                  v-model="newEvent.description"
-                  placeholder="Опишите ваше событие, правила, особенности..."
-                  rows="4"
-                ></textarea>
+                <textarea class="form-textarea" v-model="newEvent.description"
+                  placeholder="Опишите ваше событие, правила, особенности..." rows="4"></textarea>
               </div>
             </div>
 
             <div class="modal-actions">
-              <button type="button" class="btn btn-secondary" @click="showCreateModal = false">
+              <button type="button" class="btn btn-secondary" @click="closeModal">
                 <i class="times"></i>
                 Отменить
               </button>
@@ -181,6 +171,8 @@ const loading = ref(true)
 const error = ref('')
 const showCreateModal = ref(false)
 const isCreating = ref(false)
+const cityDropdownOpen = ref(false)
+const gameDropdownOpen = ref(false)
 
 const filters = ref({
   city: '',
@@ -197,10 +189,21 @@ const cities = ref([])
 const newEvent = ref({
   eventName: '',
   gameId: '',
+  gameName: '',
   eventDatetime: '',
+  cityId: '',
+  cityName: '',
   location: '',
   maxParticipants: 6,
   description: '',
+})
+
+const getSelectedCityLabel = computed(() => {
+  return newEvent.value.cityName || 'Выберите город'
+})
+
+const getSelectedGameLabel = computed(() => {
+  return newEvent.value.gameName || 'Выберите игру'
 })
 
 const openModal = () => {
@@ -210,6 +213,51 @@ const openModal = () => {
   }
   showCreateModal.value = true
 }
+
+const closeModal = () => {
+  showCreateModal.value = false
+  cityDropdownOpen.value = false
+  gameDropdownOpen.value = false
+  resetEventForm()
+}
+
+const toggleCityDropdown = () => {
+  gameDropdownOpen.value = false
+  cityDropdownOpen.value = !cityDropdownOpen.value
+}
+
+const toggleGameDropdown = () => {
+  cityDropdownOpen.value = false
+  gameDropdownOpen.value = !gameDropdownOpen.value
+}
+
+const selectCity = (cityId, cityName = '') => {
+  newEvent.value.cityId = cityId
+  newEvent.value.cityName = cityName
+  cityDropdownOpen.value = false
+}
+
+const selectGame = (gameId, gameName = '') => {
+  newEvent.value.gameId = gameId
+  newEvent.value.gameName = gameName
+  gameDropdownOpen.value = false
+}
+
+// закрытие менюшки выпадающей при клике вне
+const closeDropdowns = (event) => {
+  if (!event.target.closest('.custom-select')) {
+    cityDropdownOpen.value = false
+    gameDropdownOpen.value = false
+  }
+}
+
+onMounted(() => {
+  initUserSession()
+  fetchGames()
+  fetchCities()
+  fetchEvents()
+  document.addEventListener('click', closeDropdowns)
+})
 
 const fetchGames = async () => {
   try {
@@ -359,16 +407,19 @@ const createEvent = async () => {
       throw new Error('Пользователь не авторизован')
     }
 
+    // делаем адрес из города и места проведения
+    const fullLocation = `${newEvent.value.cityName}, ${newEvent.value.location}`
+
     const eventData = {
       ...newEvent.value,
+      location: fullLocation,
       organizerId: currentUserId,
     }
 
     await eventService.addEvent(eventData)
 
     alert('Событие успешно создано!')
-    showCreateModal.value = false
-    resetEventForm()
+    closeModal()
     await fetchEvents()
   } catch (error) {
     console.error('Ошибка создания события:', error)
@@ -406,6 +457,7 @@ const createEvent = async () => {
     isCreating.value = false
   }
 }
+
 const validateEventForm = () => {
   const errors = []
 
@@ -439,6 +491,10 @@ const validateEventForm = () => {
     }
   }
 
+  if (!newEvent.value.cityId) {
+    errors.push('Выберите город')
+  }
+
   if (!newEvent.value.location.trim()) {
     errors.push('Укажите место проведения')
   }
@@ -461,19 +517,15 @@ const resetEventForm = () => {
   newEvent.value = {
     eventName: '',
     gameId: '',
+    gameName: '',
     eventDatetime: '',
+    cityId: '',
+    cityName: '',
     location: '',
     maxParticipants: 6,
     description: '',
   }
 }
-
-onMounted(async () => {
-  initUserSession()
-  await fetchGames()
-  await fetchCities()
-  await fetchEvents()
-})
 
 watch(filters, fetchEvents, { deep: true })
 
@@ -545,10 +597,12 @@ const joinEvent = async (event) => {
   }
 }
 </script>
+
 <style scoped>
 * {
   font-size: 18px;
 }
+
 .events-page {
   min-height: 100vh;
   background: var(--light);
@@ -726,6 +780,84 @@ const joinEvent = async (event) => {
   font-family: inherit;
 }
 
+/* Стили для кастомного выпадающего списка */
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.select-header {
+  padding: 0.75rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.select-header:hover {
+  border-color: #c0c0c0;
+}
+
+.select-header.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+}
+
+.select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 1001;
+  margin-top: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.dropdown-list {
+  padding: 4px 0;
+}
+
+.dropdown-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.dropdown-item:hover {
+  background: #f1f5f9;
+}
+
+.dropdown-item.selected {
+  background: var(--primary);
+  color: white;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.arrow {
+  transition: transform 0.2s;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.arrow.rotated {
+  transform: rotate(180deg);
+}
+
 .modal-actions {
   display: flex;
   gap: 1rem;
@@ -766,6 +898,7 @@ const joinEvent = async (event) => {
 
 .btn-secondary {
   background-color: #6c757d;
+  border-radius: 36.2px;
   color: white;
 }
 

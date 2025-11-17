@@ -364,7 +364,6 @@ const loadGenres = async () => {
     const data = await response.json()
     genres.value = Array.isArray(data) ? data : []
 
-    console.log('Загружены жанры:', genres.value)
   } catch (err) {
     console.error('Ошибка загрузки жанров:', err)
   }
@@ -528,14 +527,11 @@ const validateForm = (formData) => {
 }
 
 const openAddModal = () => {
-  console.log('Opening add modal')
   showAddModal.value = true
   formErrors.value = {}
 }
 
 const openEditModal = (game) => {
-  console.log('Opening edit modal')
-
   editGame.value = { ...game }
   showEditModal.value = true
   formErrors.value = {}
@@ -952,6 +948,7 @@ onMounted(() => {
 .btn-secondary {
   background: #6c757d;
   color: white;
+  border-radius: 36.2px;
 }
 
 .btn-secondary:hover:not(:disabled) {
