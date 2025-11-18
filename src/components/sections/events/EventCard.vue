@@ -10,7 +10,7 @@
     <div class="players-preview">
       <div class="players-avatars">
         <div
-          v-for="(player, index) in event.players"
+          v-for="(player, index) in event.players"btn-outline
           :key="index"
           class="player-avatar-small"
           :style="{ zIndex: event.players ? event.players.length - index : 0 }"
@@ -166,11 +166,8 @@ const formatDateTime = (dateString, timeString = '18:00') => {
 
 .players-preview {
   display: flex;
-  justify-content: space-between;
+  justify-content: left;
   align-items: center;
-  margin-bottom: 20px;
-  padding: 12px;
-  background: #f8f9fa;
   border-radius: 8px;
 }
 
@@ -277,6 +274,7 @@ const formatDateTime = (dateString, timeString = '18:00') => {
 
 .btn-outline {
   background: transparent;
+  border-radius: 36.2px;
   border: 1px solid #ec407a;
   color: #ec407a; 
 }
