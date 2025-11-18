@@ -8,6 +8,92 @@
       </button>
     </div>
 
+    <!-- Добавленная секция фильтров -->
+    <div class="filters-section">
+      <div class="filter-group">
+        <label class="filter-label">Жанр</label>
+        <div class="custom-select">
+          <div class="select-header" @click="toggleDropdown('genre')">
+            <span>{{ getSelectedGenreLabel }}</span>
+            <span class="arrow" :class="{ 'rotated': dropdowns.genre }">▼</span>
+          </div>
+          <div v-if="dropdowns.genre" class="select-dropdown">
+            <div class="dropdown-list">
+              <div
+                class="dropdown-item"
+                :class="{ 'selected': !filters.genreId }"
+                @click="selectOption('genreId', '')"
+              >
+                Все жанры
+              </div>
+              <div
+                v-for="genre in genres"
+                :key="genre.genreId"
+                class="dropdown-item"
+                :class="{ 'selected': filters.genreId === genre.genreId }"
+                @click="selectOption('genreId', genre.genreId)"
+              >
+                {{ genre.genreName }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Количество игроков</label>
+        <div class="custom-select">
+          <div class="select-header" @click="toggleDropdown('players')">
+            <span>{{ getSelectedPlayersLabel }}</span>
+            <span class="arrow" :class="{ 'rotated': dropdowns.players }">▼</span>
+          </div>
+          <div v-if="dropdowns.players" class="select-dropdown">
+            <div class="dropdown-list">
+              <div
+                class="dropdown-item"
+                :class="{ 'selected': !filters.players }"
+                @click="selectOption('players', '')"
+              >
+                Любое количество
+              </div>
+              <div
+                v-for="option in playerOptions"
+                :key="option.value"
+                class="dropdown-item"
+                :class="{ 'selected': filters.players === option.value }"
+                @click="selectOption('players', option.value)"
+              >
+                {{ option.label }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Сортировка</label>
+        <div class="custom-select">
+          <div class="select-header" @click="toggleDropdown('sort')">
+            <span>{{ getSelectedSortLabel }}</span>
+            <span class="arrow" :class="{ 'rotated': dropdowns.sort }">▼</span>
+          </div>
+          <div v-if="dropdowns.sort" class="select-dropdown">
+            <div class="dropdown-list">
+              <div
+                v-for="option in sortOptions"
+                :key="option.value"
+                class="dropdown-item"
+                :class="{ 'selected': filters.sortBy === option.value }"
+                @click="selectOption('sortBy', option.value)"
+              >
+                {{ option.label }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="search-section">
       <div class="search-input-container">
         <i class="fas fa-search search-icon"></i>
@@ -38,6 +124,27 @@
     <div v-else class="games-table-container">
       <div class="table-header">
         <div class="table-stats">Найдено игр: {{ filteredGames.length }}</div>
+        <div class="active-filters" v-if="hasActiveFilters">
+          <span class="active-filters-label">Активные фильтры:</span>
+          <span v-if="filters.genreId" class="filter-tag">
+            Жанр: {{ getGenreName(filters.genreId) }}
+            <button @click="clearFilter('genreId')" class="filter-tag-remove">
+              <i class="fas fa-times"></i>
+            </button>
+          </span>
+          <span v-if="filters.players" class="filter-tag">
+            Игроки: {{ getSelectedPlayersLabel }}
+            <button @click="clearFilter('players')" class="filter-tag-remove">
+              <i class="fas fa-times"></i>
+            </button>
+          </span>
+          <span v-if="searchTerm" class="filter-tag">
+            Поиск: "{{ searchTerm }}"
+            <button @click="clearSearch" class="filter-tag-remove">
+              <i class="fas fa-times"></i>
+            </button>
+          </span>
+        </div>
       </div>
 
       <div class="games-table">
@@ -52,6 +159,9 @@
         <div v-if="filteredGames.length === 0" class="empty-state">
           <i class="fas fa-gamepad"></i>
           <p>Игры не найдены</p>
+          <button v-if="hasActiveFilters" class="btn btn-primary" @click="clearFilters">
+            Сбросить фильтры
+          </button>
         </div>
 
         <div v-else v-for="game in filteredGames" :key="game.gameId" class="table-row">
@@ -84,6 +194,7 @@
       </div>
     </div>
 
+    <!-- Модальные окна -->
     <div v-if="showAddModal" class="modal-overlay" @click.self="closeAddModal">
       <div class="modal-content">
         <div class="modal-header">
@@ -301,7 +412,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const loading = ref(false)
 const error = ref('')
@@ -312,6 +423,32 @@ const showAddModal = ref(false)
 const showEditModal = ref(false)
 const addingGame = ref(false)
 const updatingGame = ref(false)
+
+const filters = ref({
+  genreId: '',
+  players: '',
+  sortBy: 'name'
+})
+
+const dropdowns = ref({
+  genre: false,
+  players: false,
+  sort: false
+})
+
+const playerOptions = [
+  { value: '1-2', label: '1-2 игрока' },
+  { value: '2-4', label: '2-4 игрока' },
+  { value: '4-6', label: '4-6 игроков' },
+  { value: '6+', label: '6+ игроков' }
+]
+
+const sortOptions = [
+  { value: 'name', label: 'По названию (А-Я)' },
+  { value: 'nameDesc', label: 'По названию (Я-А)' },
+  { value: 'players', label: 'По количеству игроков' },
+  { value: 'date', label: 'По дате создания' }
+]
 
 const newGame = ref({
   gameName: '',
@@ -331,6 +468,104 @@ const editGame = ref({
 })
 
 const formErrors = ref({})
+
+const getSelectedGenreLabel = computed(() => {
+  if (!filters.value.genreId) return 'Все жанры'
+  const genre = genres.value.find(g => g.genreId === filters.value.genreId)
+  return genre ? genre.genreName : 'Все жанры'
+})
+
+const getSelectedPlayersLabel = computed(() => {
+  if (!filters.value.players) return 'Любое количество'
+  const option = playerOptions.find(p => p.value === filters.value.players)
+  return option ? option.label : 'Любое количество'
+})
+
+const getSelectedSortLabel = computed(() => {
+  const option = sortOptions.find(s => s.value === filters.value.sortBy)
+  return option ? option.label : 'По названию'
+})
+
+const hasActiveFilters = computed(() => {
+  return filters.value.genreId || filters.value.players || searchTerm.value
+})
+
+// ОСНОВНОЙ computed для фильтрации - УДАЛИТЬ ДУБЛИРУЮЩИЙСЯ КОД НИЖЕ
+const filteredGames = computed(() => {
+  let filtered = [...games.value]
+
+  // Фильтрация по жанру
+  if (filters.value.genreId) {
+    filtered = filtered.filter(game => game.genreId === filters.value.genreId)
+  }
+
+  // Фильтрация по количеству игроков
+  if (filters.value.players) {
+    filtered = filtered.filter(game => {
+      const maxPlayers = game.maxPlayers
+      switch (filters.value.players) {
+        case '1-2': return maxPlayers <= 2
+        case '2-4': return maxPlayers >= 2 && maxPlayers <= 4
+        case '4-6': return maxPlayers >= 4 && maxPlayers <= 6
+        case '6+': return maxPlayers >= 6
+        default: return true
+      }
+    })
+  }
+
+  // Сортировка
+  filtered.sort((a, b) => {
+    switch (filters.value.sortBy) {
+      case 'name':
+        return a.gameName.localeCompare(b.gameName)
+      case 'nameDesc':
+        return b.gameName.localeCompare(a.gameName)
+      case 'players':
+        return b.maxPlayers - a.maxPlayers
+      case 'date':
+        return new Date(b.createdAt) - new Date(a.createdAt)
+      default:
+        return 0
+    }
+  })
+
+  return filtered
+})
+
+const toggleDropdown = (type) => {
+  Object.keys(dropdowns.value).forEach(key => {
+    if (key !== type) dropdowns.value[key] = false
+  })
+  dropdowns.value[type] = !dropdowns.value[type]
+}
+
+const selectOption = (filterType, value) => {
+  filters.value[filterType] = value
+  dropdowns.value[Object.keys(dropdowns.value).find(key => 
+    key === filterType.replace('Id', '').replace('By', '')
+  )] = false
+}
+
+const clearFilter = (filterType) => {
+  filters.value[filterType] = ''
+}
+
+const clearFilters = () => {
+  filters.value = {
+    genreId: '',
+    players: '',
+    sortBy: 'name'
+  }
+  searchTerm.value = ''
+}
+
+const closeDropdowns = (event) => {
+  if (!event.target.closest('.custom-select')) {
+    Object.keys(dropdowns.value).forEach(key => {
+      dropdowns.value[key] = false
+    })
+  }
+}
 
 const loadGames = async () => {
   try {
@@ -585,13 +820,14 @@ const formatDate = (dateString) => {
   }
 }
 
-const filteredGames = computed(() => {
-  return games.value
-})
-
 onMounted(() => {
   loadGames()
   loadGenres()
+  document.addEventListener('click', closeDropdowns)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeDropdowns)
 })
 </script>
 
@@ -1069,5 +1305,363 @@ onMounted(() => {
 
 .modal-body {
   padding: 2rem;
+}
+
+/* Добавленные стили для фильтров */
+.filters-section {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  position: relative;
+}
+
+.filter-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--secondary);
+  font-size: 0.9rem;
+}
+
+.custom-select {
+  position: relative;
+  width: 250;
+}
+
+.select-header {
+  padding: 0.75rem 1rem;
+  width: 280px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.select-header:hover {
+  border-color: var(--primary);
+}
+
+.select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 1002;
+  margin-top: 4px;
+}
+
+.dropdown-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.dropdown-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.dropdown-item:hover {
+  background: #f1f5f9;
+}
+
+.dropdown-item.selected {
+  background: var(--primary);
+  color: white;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.arrow {
+  transition: transform 0.3s ease;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.clear-filters {
+  margin-left: auto;
+  height: fit-content;
+}
+
+.active-filters {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.active-filters-label {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(108, 99, 255, 0.1);
+  color: var(--accent);
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.filter-tag-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.filter-tag-remove:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .filters-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .custom-select {
+    width: 100%;
+  }
+
+  .clear-filters {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .active-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Существующие стили остаются без изменений */
+.games-management {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--secondary);
+  margin: 0;
+}
+
+.search-section {
+  margin-bottom: 2rem;
+}
+
+.search-input-container {
+  position: relative;
+  max-width: 950px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 89, 111, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+}
+
+.clear-search {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.clear-search:hover {
+  color: #333;
+}
+
+.games-table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.table-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.table-stats {
+  color: #666;
+  font-weight: 500;
+}
+
+.games-table {
+  width: 100%;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: center;
+}
+
+.table-row.header-row {
+  background: #f8f9ff;
+  font-weight: 600;
+  color: var(--secondary);
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.table-cell {
+  display: flex;
+  align-items: center;
+}
+
+.game-name {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.game-title {
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+.game-description {
+  font-size: 0.8rem;
+  color: #666;
+  line-height: 1.3;
+}
+
+.genre-badge {
+  background: rgba(108, 99, 255, 0.1);
+  color: var(--accent);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.players-count {
+  color: #666;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.btn-edit {
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--success);
+}
+
+.btn-edit:hover {
+  background: rgba(76, 175, 80, 0.2);
+}
+
+.btn-delete {
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+}
+
+.btn-delete:hover {
+  background: rgba(244, 67, 54, 0.2);
+}
+
+.empty-state {
+  padding: 3rem;
+  text-align: center;
+  color: #666;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #ccc;
 }
 </style>

@@ -780,7 +780,6 @@ const joinEvent = async (event) => {
   font-family: inherit;
 }
 
-/* Стили для кастомного выпадающего списка */
 .custom-select {
   position: relative;
   width: 100%;

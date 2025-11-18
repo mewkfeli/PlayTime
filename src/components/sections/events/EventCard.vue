@@ -129,8 +129,169 @@ const formatDateTime = (dateString, timeString = '18:00') => {
   })
 }
 </script>
-<style>
+
+<style scoped>
+.event-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #eaeaea;
+  transition: all 0.3s ease;
+  height: fit-content;
+}
+
+.event-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.event-card-header {
+  margin-bottom: 16px;
+}
+
+.event-card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
 .event-card-game {
-  margin: 10px 0px 10px 0px;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  margin: 10px 0;
+}
+
+.players-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.players-avatars {
+  display: flex;
+}
+
+.player-avatar-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ec407a;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: -8px;
+  border: 2px solid white;
+}
+
+.player-avatar-small:first-child {
+  margin-left: 0;
+}
+
+.players-count {
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.event-card-meta {
+  margin-bottom: 20px;
+}
+
+.event-meta-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.event-meta-item:last-child {
+  margin-bottom: 0;
+}
+
+.event-meta-icon {
+  width: 20px;
+  margin-right: 12px;
+  color: #ec407a;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.event-meta-content h4 {
+  margin: 0 0 4px 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.event-meta-content p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #5a6c7d;
+  line-height: 1.4;
+}
+
+.event-card-description {
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.event-card-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.btn-small {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #ec407a;
+  color: #ec407a; 
+}
+
+.btn-outline:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary {
+  background: #ec407a;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #d81b60;
 }
 </style>
