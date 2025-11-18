@@ -2,7 +2,6 @@
   <div class="user-created-events-section">
     <div class="section-header">
       <h2 class="section-title">
-        <i class="fas fa-calendar-plus"></i>
         Мои созданные события
       </h2>
       <div class="events-count">
@@ -31,9 +30,9 @@
     </div>
 
     <div v-else class="events-grid">
-      <div 
-        v-for="event in events" 
-        :key="event.eventId" 
+      <div
+        v-for="event in events"
+        :key="event.eventId"
         class="event-card"
         :class="{ 'event-cancelled': event.status === 'Отменено' }"
       >
@@ -74,7 +73,7 @@
         </div>
 
         <div class="event-actions">
-          <button 
+          <button
             v-if="event.status === 'Активно'"
             class="btn btn-cancel"
             @click="cancelEvent(event.eventId)"
@@ -166,7 +165,7 @@ const confirmCancel = async () => {
 
   try {
     console.log('Подтверждение отмены события:', selectedEvent.value.eventId)
-    
+
     await eventService.cancelEvent(selectedEvent.value.eventId)
 
     const eventIndex = events.value.findIndex(event => event.eventId === selectedEvent.value.eventId)
@@ -176,9 +175,9 @@ const confirmCancel = async () => {
 
     showCancelModal.value = false
     selectedEvent.value = null
-    
+
     alert('Событие успешно отменено')
-    
+
   } catch (err) {
     console.error('Ошибка при отмене события:', err)
     const errorMessage = typeof err === 'string' ? err : 'Не удалось отменить событие'

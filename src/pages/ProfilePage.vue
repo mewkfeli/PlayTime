@@ -159,7 +159,7 @@ const saveProfile = async () => {
 }
 
 const handleSaveError = (error) => {
-  let errorMessage = 'Ошибка при сохранении профиля'
+  let errorMessage = 'Ошибка при сохранении профиля, проверьте почту'
 
   if (error.response?.data) {
     const errorData = error.response.data
@@ -186,7 +186,7 @@ const handleSaveError = (error) => {
       alert('Ошибка при сохранении профиля')
     }
   } else if (error.request) {
-    errorMessage = 'Ошибка сети: не удалось подключиться к серверу'
+    errorMessage = 'Не удалось подключиться к серверу'
     validationErrors.value.push(errorMessage)
     alert(errorMessage)
   } else {
